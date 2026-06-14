@@ -1,0 +1,62 @@
+package web
+
+// FeedPage is the full live-feed screen with its own polling container.
+templ FeedPage(pd PageData, events []eventView) {
+	@Layout(pd) {
+		<section class="panel">
+			<div class="panel__head">
+				<h2 class="panel__title">Live feed</h2>
+				<span id="feed-live-hint" class="panel__hint">Includes dry-run would-ban events · live (pauses while you scroll)</span>
+			</div>
+			<div
+				id="live-feed"
+				class="feed feed--full"
+				hx-get="/_p/feed"
+				hx-trigger="every 5s"
+				hx-swap="innerHTML"
+			>
+				@FeedList(events)
+			</div>
+		</section>
+	}
+}
+
+// FeedList is the reusable list body — rendered both inside a page and swapped in by
+// the HTMX poll. One component, no duplicated markup.
+templ FeedList(events []eventView) {
+	if len(events) == 0 {
+		<div class="empty">
+			<p class="empty__title">Quiet on the wire.</p>
+			<p class="empty__hint">edge-guardian is watching. Detections will appear here as they happen.</p>
+		</div>
+	} else {
+		<ul class="feed__list" role="list">
+			for _, e := range events {
+				@FeedRow(e)
+			}
+		</ul>
+	}
+}
+
+// FeedRow is one detection line. Banned vs would-ban is shown by an action tag, not
+// by a second color.
+templ FeedRow(e eventView) {
+	<li class={ "feed__row", templ.KV("feed__row--dry", e.WouldBan) }>
+		<span class="feed__time mono">{ e.TimeHM }</span>
+		<span class="feed__ip mono">{ orDash(e.IP) }</span>
+		<span class="feed__detector">{ orDash(e.Detector) }</span>
+		<span class="feed__origin mono">{ e.Origin }</span>
+		if e.WouldBan {
+			<span class="tag tag--dry" title="dry-run: would have been banned">would&#8209;ban</span>
+		} else {
+			<span class="tag tag--banned" title="actively banned">banned</span>
+		}
+	</li>
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "—"
+	}
+	return s
+}

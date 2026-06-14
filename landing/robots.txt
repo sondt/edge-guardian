@@ -1,0 +1,38 @@
+# edge-guardian landing page — open to all crawlers, including AI search engines.
+
+User-agent: *
+Allow: /
+
+# Explicitly welcome AI crawlers (some respect these named records).
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# LLM-friendly summary of this site.
+# llms.txt: /llms.txt

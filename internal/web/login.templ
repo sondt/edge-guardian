@@ -1,0 +1,45 @@
+package web
+
+// LoginPage is the unauthenticated entry. It is a plain form POST (not HTMX) so it
+// works even with scripting disabled; the CSRF token rides in a hidden field via the
+// double-submit cookie. failed=true shows a single directive error.
+templ LoginPage(token string, failed bool) {
+	<!DOCTYPE html>
+	<html lang="en" data-theme="light">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="color-scheme" content="light dark"/>
+			<title>Sign in · edge-guardian</title>
+			<link rel="stylesheet" href="/static/app.css"/>
+			<script src="/static/app.js" defer></script>
+		</head>
+		<body class="login-body" data-state="quiet">
+			<main class="login">
+				<div class="login__card">
+					<div class="login__brand">
+						<span class="wordmark__mark" aria-hidden="true">◳</span>
+						<span class="wordmark__text">Edge Guardian</span>
+					</div>
+					<p class="login__lede">Edge intrusion prevention. Sign in to watch the line.</p>
+					if failed {
+						<p class="login__error" role="alert">That username and password didn&#39;t match. Try again.</p>
+					}
+					<form method="post" action="/login" class="login__form">
+						<input type="hidden" name="csrf_token" value={ token }/>
+						<label class="field">
+							<span class="field__label">Username</span>
+							<input class="input mono" type="text" name="username" autocomplete="username" autofocus required/>
+						</label>
+						<label class="field">
+							<span class="field__label">Password</span>
+							<input class="input mono" type="password" name="password" autocomplete="current-password" required/>
+						</label>
+						<button class="btn btn--primary" type="submit">Sign in</button>
+					</form>
+					<p class="login__foot">Bound to localhost · reach it over an SSH tunnel.</p>
+				</div>
+			</main>
+		</body>
+	</html>
+}

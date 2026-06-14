@@ -1,0 +1,70 @@
+# edge-guardian config. Edit, then: systemctl restart edge-guardian
+# Full reference: /usr/share/edge-guardian/config.example.toml and docs/06-cau-hinh.md
+[log]
+paths = ["/var/log/nginx/access.log"]
+
+[detection]
+bad_uri_patterns = [
+  '\.(php|cgi|asp|aspx|jsp|env|git|sql|bak)(\?|/|$)',
+  '/(wp-admin|wp-login|wp-content|xmlrpc)',
+  '/(phpmyadmin|pma|adminer)',
+  '/(\.env|\.git|\.aws|\.ssh)',
+]
+threshold = 1
+window_secs = 60
+# Start SAFE: detect + alert but do NOT block. Flip to false once you've observed.
+dry_run = true
+
+# Exploit-signature detection (SQLi / path-traversal / RCE / Log4Shell) on the same
+# access log. OFF by default — higher false-positive risk than path scanning. Turn on
+# with dry_run above still true to observe before it can ban. Empty patterns = built-in set.
+[exploit]
+enabled = false
+threshold = 2
+window_secs = 60
+
+# Bad-bot detection by User-Agent (sqlmap / nikto / nuclei / masscan / automation libs).
+# OFF by default. Needs the (?P<ua>...) group in line_regex (the built-in default has it).
+# Empty patterns = built-in scanner-UA set.
+[badbot]
+enabled = false
+threshold = 1
+window_secs = 60
+
+# Rate-abuse / DoS-lite: count every request per IP, ban a flood. OFF by default — highest
+# false-positive risk. ONLY enable when the log shows real client IPs (not a proxy/CDN IP)
+# and you've allowlisted your proxies/monitoring in [ban].whitelist.
+[ratelimit]
+enabled = false
+threshold = 300
+window_secs = 10
+
+# Edge health monitoring (not security): per-site status/error-rate/latency from the same
+# access log, alerts on degraded/down, /sites dashboard page. OFF by default. Needs host +
+# status in the log (JSON log format recommended — see docs/10).
+[health]
+enabled = false
+window_mins = 180
+err_ratio_pct = 5
+latency_p95_ms = 2000
+sustained_mins = 5
+cooldown_mins = 30
+
+[ban]
+duration = "168h"
+whitelist = ["127.0.0.0/8", "::1/128"]
+nft_table = "edge_guardian"
+nft_set_v4 = "blocklist4"
+nft_set_v6 = "blocklist6"
+
+[telegram]
+enabled = false
+
+[email]
+enabled = false
+
+[sshd]
+enabled = false
+
+[state]
+path = "/var/lib/edge-guardian/state.json"

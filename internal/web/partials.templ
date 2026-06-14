@@ -1,0 +1,169 @@
+package web
+
+import "fmt"
+
+// sentinelPlaceholder is the first paint before the 3s poll arrives, so the strip
+// never collapses to zero height.
+templ sentinelPlaceholder() {
+	<div class="sentinel sentinel--placeholder" aria-hidden="true"></div>
+}
+
+// Sentinel is the signature element: a thin horizontal SVG timeline of detection
+// events. Each tick's height encodes severity and its opacity encodes intensity;
+// banned ticks are solid, would-ban ticks are hollow outlines. The same component
+// renders both at first paint and on every 3s HTMX swap into #sentinel-wrap.
+templ Sentinel(m Metrics) {
+	<div
+		class="sentinel"
+		role="img"
+		aria-label={ sentinelLabel(m) }
+		data-state={ stateAttr(m.UnderAtk) }
+	>
+		<svg
+			class="sentinel__svg"
+			viewBox={ sentinelViewBox() }
+			preserveAspectRatio="none"
+			aria-hidden="true"
+		>
+			<line class="sentinel__base" x1="0" y1={ sentinelBaselineY() } x2={ sentinelWidth() } y2={ sentinelBaselineY() }></line>
+			for i, t := range m.Sentinel {
+				if t.Count > 0 {
+					@sentinelTick(i, t)
+				}
+			}
+		</svg>
+	</div>
+}
+
+// sentinelTick draws one vertical mark. Solid = banned, hollow = would-ban.
+templ sentinelTick(i int, t SentinelTick) {
+	if t.Hollow {
+		<rect
+			class="sentinel__tick sentinel__tick--hollow"
+			x={ tickX(i) }
+			y={ tickY(t) }
+			width={ tickWidth() }
+			height={ tickHeight(t) }
+			style={ tickStyle(t) }
+		>
+			<title>{ fmt.Sprintf("%d would-ban", t.Count) }</title>
+		</rect>
+	} else {
+		<rect
+			class="sentinel__tick sentinel__tick--solid"
+			x={ tickX(i) }
+			y={ tickY(t) }
+			width={ tickWidth() }
+			height={ tickHeight(t) }
+			style={ tickStyle(t) }
+		>
+			<title>{ fmt.Sprintf("%d banned", t.Count) }</title>
+		</rect>
+	}
+}
+
+// StateChip is the plain-language headline status. Quiet = neutral, Under scan =
+// alert. Rendered once, in the top bar (refreshed on each poll via the OOB swap in
+// ReadoutsLive).
+templ StateChip(state string, underAtk bool) {
+	<span class="chip" data-state={ stateAttr(underAtk) }>
+		<span class="chip__dot" aria-hidden="true"></span>
+		<span class="chip__label">{ chipLabel(state) }</span>
+	</span>
+}
+
+// Readouts renders the four metric cards: banned, events, top origin, by-type.
+templ Readouts(m Metrics) {
+	<div class="readouts">
+		@readoutCount("Banned", m.Active, m.BannedSpark, m.Active > 0 && m.UnderAtk)
+		@readoutCount("Events · 24h", m.TotalEvents, m.EventsSpark, false)
+		@readoutOrigin(m)
+		@readoutByType(m)
+	</div>
+}
+
+// ReadoutsSection is the polling wrapper used in the FULL page render. It carries the
+// HTMX 5s self-refresh but NO out-of-band chip (so the page has exactly one
+// #state-chip-slot, in the top bar).
+templ ReadoutsSection(m Metrics) {
+	<section
+		id="readouts"
+		class="readouts-section"
+		hx-get="/_p/readouts"
+		hx-trigger="every 5s"
+		hx-swap="outerHTML"
+	>
+		@Readouts(m)
+	</section>
+}
+
+// ReadoutsLive is the PARTIAL-only response: it swaps the readouts section AND, via an
+// out-of-band swap, refreshes the top-bar state chip so the header stays current on
+// each poll. It must NOT be used in a full-page render (the OOB span would duplicate
+// the #state-chip-slot id).
+templ ReadoutsLive(m Metrics) {
+	@ReadoutsSection(m)
+	<span id="state-chip-slot" hx-swap-oob="innerHTML">
+		@StateChip(m.State, m.UnderAtk)
+	</span>
+}
+
+templ readoutCount(label string, value int, spark []int, hot bool) {
+	<article class={ "card", templ.KV("card--hot", hot) }>
+		<div class="card__label">{ label }</div>
+		<div class="card__value mono">{ fmt.Sprintf("%d", value) }</div>
+		@sparkline(spark)
+	</article>
+}
+
+templ readoutOrigin(m Metrics) {
+	<article class="card">
+		<div class="card__label">Top origin</div>
+		if len(m.TopOrigins) > 0 {
+			<div class="card__value mono card__value--sm">{ m.TopOrigins[0].Label }</div>
+			<div class="ranks">
+				for _, o := range m.TopOrigins {
+					<div class="rank">
+						<div class="rank__bar" style={ barWidth(o.Share) }></div>
+						<span class="rank__label mono">{ o.Label }</span>
+						<span class="rank__pct mono">{ pct(o.Share) }</span>
+					</div>
+				}
+			</div>
+		} else {
+			<div class="card__value card__value--empty">No traffic</div>
+		}
+	</article>
+}
+
+templ readoutByType(m Metrics) {
+	<article class="card">
+		<div class="card__label">By type</div>
+		if len(m.Detectors) > 0 {
+			<div class="ranks ranks--type">
+				for _, d := range m.Detectors {
+					<div class="rank">
+						<div class="rank__bar rank__bar--neutral" style={ barWidth(d.Share) }></div>
+						<span class="rank__label mono">{ d.Name }</span>
+						<span class="rank__pct mono">{ pct(d.Share) }</span>
+					</div>
+				}
+			</div>
+		} else {
+			<div class="card__value card__value--empty">No detections</div>
+		}
+	</article>
+}
+
+// sparkline renders a tiny SVG trend under a readout number.
+templ sparkline(counts []int) {
+	if path := sparkPath(counts, 100, 22); path != "" {
+		<svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+			<polyline class="spark__line" points={ path } fill="none"></polyline>
+		</svg>
+	} else {
+		<svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+			<line class="spark__flat" x1="0" y1="22" x2="100" y2="22"></line>
+		</svg>
+	}
+}

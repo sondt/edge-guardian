@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>edge-guardian — calm until something happens · single-binary intrusion prevention for Linux</title>
+<meta name="description" content="edge-guardian is a free, open-source, single-binary intrusion prevention daemon for Linux. It detects scanners and brute-force from your logs, bans the source IPs at the nftables firewall, alerts you in real time, and ships with a built-in dashboard. One line to install.">
+<meta name="theme-color" content="#F6F7F9">
+<meta name="author" content="Giai Phap Moi Pro">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://github.com/sondt/edge-guardian">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;rect width='100' height='100' rx='18' fill='%2316181D'/&gt;&lt;text x='50' y='72' font-size='62' text-anchor='middle' fill='%23F6F7F9' font-family='monospace'&gt;&#9651;&lt;/text&gt;&lt;/svg&gt;">
+<!-- Social / Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="edge-guardian — calm until something happens">
+<meta property="og:description" content="Single-binary intrusion prevention for Linux. Bans scanners & brute-force at the firewall, alerts in real time, and ships with a dashboard — free. One line to install.">
+<meta property="og:url" content="https://github.com/sondt/edge-guardian">
+<meta property="og:site_name" content="edge-guardian">
+<meta property="og:image" content="og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="edge-guardian — calm until something happens">
+<meta name="twitter:description" content="Single-binary intrusion prevention for Linux. Bans scanners & brute-force at the firewall, alerts in real time, and ships with a dashboard — free.">
+<meta name="twitter:image" content="og.png">
+
+<!-- Structured data: helps Google rich results AND grounds AI search engines -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "name": "edge-guardian",
+      "alternateName": "ns guard",
+      "applicationCategory": "SecurityApplication",
+      "applicationSubCategory": "Intrusion Prevention System (IPS)",
+      "operatingSystem": "Linux",
+      "description": "A free, open-source, single-binary intrusion prevention daemon for Linux. It detects scanners and brute-force attacks from server logs, bans the source IPs at the nftables firewall, alerts via Telegram and email, and ships with a built-in local dashboard.",
+      "url": "https://github.com/sondt/edge-guardian",
+      "downloadUrl": "https://github.com/sondt/edge-guardian/releases",
+      "softwareVersion": "0.1.0",
+      "programmingLanguage": "Go",
+      "license": "https://www.apache.org/licenses/LICENSE-2.0",
+      "isAccessibleForFree": true,
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "HTTP scanner detection",
+        "SSH brute-force detection",
+        "Port-scan detection (distinct-port counting)",
+        "Honeypot ports",
+        "nftables bans with auto-expiry and escalation",
+        "Telegram and email alerts",
+        "Public blocklist import (FireHOL, Spamhaus)",
+        "Built-in local dashboard",
+        "Dry-run mode",
+        "Offline GeoIP enrichment"
+      ],
+      "author": { "@type": "Organization", "name": "Giai Phap Moi Pro", "url": "https://giaiphapmoipro.vn" }
+    },
+    {
+      "@type": "WebSite",
+      "name": "edge-guardian",
+      "url": "https://github.com/sondt/edge-guardian",
+      "description": "Single-binary intrusion prevention for Linux."
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is edge-guardian?",
+          "acceptedAnswer": { "@type": "Answer", "text": "edge-guardian is a free, open-source, single-binary intrusion prevention daemon for Linux. It reads your server logs, detects scanners and brute-force attacks, bans the source IPs at the nftables firewall, alerts you via Telegram or email, and ships with a built-in local dashboard." }
+        },
+        {
+          "@type": "Question",
+          "name": "How is edge-guardian different from fail2ban and CrowdSec?",
+          "acceptedAnswer": { "@type": "Answer", "text": "fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections, and its dashboard is a paid feature. edge-guardian is a single static binary with a one-line install and a dashboard included free." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is edge-guardian free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. edge-guardian is free and open source under the Apache-2.0 license, including the dashboard." }
+        },
+        {
+          "@type": "Question",
+          "name": "What does edge-guardian need to run?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required." }
+        },
+        {
+          "@type": "Question",
+          "name": "What attacks does edge-guardian detect?",
+          "acceptedAnswer": { "@type": "Answer", "text": "HTTP scanner paths, SSH brute-force, port scans (by counting distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I install edge-guardian?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Run the one-line installer (curl -fsSL .../install.sh | sudo bash), install the .deb or .rpm package, or run the Docker image. edge-guardian starts in dry-run mode so it observes and alerts before it blocks." }
+        }
+      ]
+    }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --paper:#F6F7F9; --panel:#FFFFFF; --line:#E2E5EA; --ink:#16181D; --muted:#5C636E;
+  --alert:#D7402B; --alert-rgb:215 64 43;
+  --d-paper:#16181D; --d-panel:#1D2026; --d-line:#2A2E37; --d-ink:#E7E9EC; --d-muted:#9AA1AC;
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --radius:10px; --maxw:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink); font-family:var(--body);
+  font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased;
+  /* faint instrument grid + grain */
+  background-image:
+    linear-gradient(var(--line) 1px,transparent 1px),
+    linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px,64px 64px;
+  background-position:center top;
+}
+body::before{ /* fade the grid so it's a whisper */
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 0%,transparent 0%,var(--paper) 70%);
+}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.02em;line-height:1.05;margin:0}
+.mono{font-family:var(--mono)}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.alert-text{color:var(--alert)}
+section{position:relative}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:50;backdrop-filter:saturate(1.4) blur(10px);
+  background:color-mix(in srgb,var(--paper) 78%,transparent);border-bottom:1px solid var(--line)}
+.nav__in{display:flex;align-items:center;gap:22px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:-.02em}
+.brand__mark{width:26px;height:26px;border-radius:7px;background:var(--ink);color:var(--paper);
+  display:grid;place-items:center;font-family:var(--mono);font-size:15px}
+.nav__links{display:flex;gap:22px;margin-left:auto;font-size:14.5px;color:var(--muted)}
+.nav__links a:hover{color:var(--ink)}
+.nav__cta{font-size:14px;font-weight:600;padding:8px 14px;border:1px solid var(--ink);border-radius:8px}
+.nav__cta:hover{background:var(--ink);color:var(--paper)}
+@media(max-width:760px){.nav__links{display:none}}
+
+/* ---------- chip ---------- */
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12.5px;
+  font-weight:500;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel)}
+.chip__dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.chip[data-state="alert"]{border-color:color-mix(in srgb,var(--alert) 45%,var(--line));color:var(--alert)}
+.chip[data-state="alert"] .chip__dot{background:var(--alert);box-shadow:0 0 0 0 rgb(var(--alert-rgb)/.5);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgb(var(--alert-rgb)/0)}100%{box-shadow:0 0 0 0 rgb(var(--alert-rgb)/0)}}
+
+/* ---------- hero ---------- */
+.hero{padding:74px 0 30px;overflow:hidden}
+.hero .eyebrow{opacity:0;animation:rise .7s .05s both}
+.hero h1{font-size:clamp(44px,8vw,86px);margin:18px 0 0;max-width:14ch}
+.hero h1 span{display:inline-block;opacity:0;animation:rise .8s both}
+.hero h1 span:nth-child(1){animation-delay:.12s}
+.hero h1 span:nth-child(2){animation-delay:.22s}
+.hero__sub{font-size:clamp(17px,2.2vw,21px);color:var(--muted);max-width:46ch;margin:24px 0 0;opacity:0;animation:rise .8s .34s both}
+.hero__sub b{color:var(--ink);font-weight:600}
+.hero__cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:30px;opacity:0;animation:rise .8s .46s both}
+
+/* install command pill */
+.cmd{display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--paper);
+  border-radius:11px;padding:13px 14px 13px 16px;font-family:var(--mono);font-size:14px;
+  box-shadow:0 14px 34px -18px rgb(22 24 29/.5)}
+.cmd__prompt{color:#6f7681}
+.cmd__txt{white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+.cmd__txt::-webkit-scrollbar{display:none}
+.cmd__copy{flex:none;border:1px solid #34394330;background:#ffffff14;color:var(--paper);
+  font-family:var(--mono);font-size:12px;border-radius:7px;padding:6px 10px;cursor:pointer}
+.cmd__copy:hover{background:#ffffff26}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;
+  padding:13px 18px;border:1px solid var(--ink);border-radius:11px}
+.btn-ghost:hover{background:var(--ink);color:var(--paper)}
+
+/* ---------- sentinel line (signature) ---------- */
+.sentinel{margin-top:54px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--panel);position:relative;height:120px;overflow:hidden;opacity:0;animation:rise .9s .6s both}
+.sentinel__label{position:absolute;left:16px;top:12px;z-index:2;font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sentinel__base{position:absolute;left:0;right:0;bottom:30px;height:1px;background:var(--line);z-index:1}
+.sentinel__track{position:absolute;bottom:30px;left:0;display:flex;align-items:flex-end;gap:5px;height:80px;
+  will-change:transform;animation:scroll 28s linear infinite}
+.tick{width:4px;background:color-mix(in srgb,var(--muted) 32%,transparent);border-radius:2px;flex:none}
+.tick--mid{background:color-mix(in srgb,var(--muted) 55%,transparent)}
+.tick--dry{background:transparent;border:1px solid color-mix(in srgb,var(--alert) 55%,transparent)}
+.tick--alert{background:var(--alert);box-shadow:0 0 12px -2px rgb(var(--alert-rgb)/.6)}
+@keyframes scroll{to{transform:translateX(-50%)}}
+.sentinel__fade{position:absolute;top:0;bottom:0;width:90px;z-index:2;pointer-events:none}
+.sentinel__fade--l{left:0;background:linear-gradient(90deg,var(--panel),transparent)}
+.sentinel__fade--r{right:0;background:linear-gradient(270deg,var(--panel),transparent)}
+.sentinel__read{position:absolute;right:16px;top:12px;z-index:2;display:flex;gap:18px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.sentinel__read b{color:var(--ink);font-weight:600}
+@media(max-width:560px){.sentinel__read{display:none}}
+
+/* trust strip */
+.trust{display:flex;flex-wrap:wrap;gap:10px 26px;align-items:center;padding:22px 0 6px;color:var(--muted);font-family:var(--mono);font-size:12.5px;opacity:0;animation:rise .8s .72s both}
+.trust span{display:inline-flex;gap:7px;align-items:center}
+.trust b{color:var(--ink)}
+
+/* ---------- generic section header ---------- */
+.sec{padding:84px 0}
+.sec__head{max-width:62ch}
+.sec h2{font-size:clamp(30px,4.6vw,46px);margin-top:14px}
+.sec__lead{color:var(--muted);font-size:19px;margin-top:16px}
+
+/* ---------- problem ---------- */
+.problem{border-top:1px solid var(--line)}
+.probe-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:30px}
+.probe{font-family:var(--mono);font-size:13.5px;color:var(--muted);background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:11px 13px;display:flex;justify-content:space-between;gap:10px}
+.probe .x{color:var(--alert)}
+.versus{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px}
+.versus .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.versus h3{font-size:18px}
+.versus p{color:var(--muted);font-size:15.5px;margin:.5em 0 0}
+@media(max-width:680px){.versus{grid-template-columns:1fr}}
+
+/* ---------- wedge pillars ---------- */
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
+.pillar{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:30px;position:relative;overflow:hidden}
+.pillar__n{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em}
+.pillar h3{font-size:25px;margin:14px 0 10px}
+.pillar p{color:var(--muted);font-size:16px}
+.pillar ul{list-style:none;padding:0;margin:18px 0 0;display:flex;flex-direction:column;gap:9px}
+.pillar li{font-size:15px;display:flex;gap:10px;align-items:flex-start}
+.pillar li::before{content:"";flex:none;width:7px;height:7px;border-radius:2px;background:var(--ink);margin-top:8px}
+.pillar--accent li::before{background:var(--alert)}
+@media(max-width:680px){.pillars{grid-template-columns:1fr}}
+
+/* ---------- features grid ---------- */
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:36px}
+.feat__cell{background:var(--panel);padding:24px;min-height:148px;transition:background .2s}
+.feat__cell:hover{background:#fbfcfd}
+.feat__k{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.08em}
+.feat__cell h3{font-size:18px;margin:14px 0 8px}
+.feat__cell p{color:var(--muted);font-size:14.5px;margin:0;line-height:1.5}
+.feat__cell .tag{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:11px;color:var(--alert);border:1px solid color-mix(in srgb,var(--alert) 35%,var(--line));border-radius:5px;padding:1px 7px}
+@media(max-width:860px){.feat{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.feat{grid-template-columns:1fr}}
+
+/* ---------- flow ---------- */
+.flow{display:flex;align-items:stretch;gap:0;margin-top:36px;flex-wrap:wrap}
+.flow__step{flex:1;min-width:150px;background:var(--panel);border:1px solid var(--line);padding:18px 16px;position:relative}
+.flow__step:not(:last-child){border-right:none}
+.flow__step:first-child{border-radius:12px 0 0 12px}
+.flow__step:last-child{border-radius:0 12px 12px 0}
+.flow__n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.flow__step h3{font-size:16px;margin:8px 0 4px}
+.flow__step p{font-size:13px;color:var(--muted);margin:0}
+.flow__step--ban h3{color:var(--alert)}
+@media(max-width:760px){.flow__step{flex:1 1 100%;border-right:1px solid var(--line)!important;border-radius:0!important}
+  .flow__step:first-child{border-radius:12px 12px 0 0!important}.flow__step:last-child{border-radius:0 0 12px 12px!important}
+  .flow__step:not(:last-child){border-bottom:none}}
+
+/* ---------- dashboard showcase (DARK) ---------- */
+.show{background:var(--d-paper);color:var(--d-ink);border-top:1px solid var(--d-line);border-bottom:1px solid var(--d-line)}
+.show .eyebrow{color:var(--d-muted)}
+.show h2{color:var(--d-ink)}
+.show__lead{color:var(--d-muted);font-size:19px;margin-top:16px;max-width:54ch}
+.dash{margin-top:42px;background:var(--d-panel);border:1px solid var(--d-line);border-radius:14px;overflow:hidden;
+  box-shadow:0 40px 90px -50px #000}
+.dash__bar{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--d-line)}
+.dash__brand{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:15px;color:var(--d-ink)}
+.dash__brand .m{width:22px;height:22px;border-radius:6px;background:var(--d-ink);color:var(--d-paper);display:grid;place-items:center;font-family:var(--mono);font-size:13px}
+.dash__nav{display:flex;gap:16px;font-size:13px;color:var(--d-muted)}
+.dash__nav .on{color:var(--d-ink)}
+.dash__bar .chip{margin-left:auto;background:transparent;border-color:var(--d-line);color:var(--d-muted)}
+.dash__bar .chip[data-state="alert"]{color:var(--alert);border-color:color-mix(in srgb,var(--alert) 45%,var(--d-line))}
+.dash__host{font-family:var(--mono);font-size:12px;color:var(--d-muted)}
+@media(max-width:620px){.dash__nav,.dash__host{display:none}}
+/* dark sentinel inside dash */
+.dsent{height:70px;border-bottom:1px solid var(--d-line);position:relative;overflow:hidden}
+.dsent__track{position:absolute;bottom:0;left:0;display:flex;align-items:flex-end;gap:5px;height:64px;animation:scroll 24s linear infinite}
+.dsent .tick{background:#3a404b}
+.dsent .tick--mid{background:#4c5360}
+.dsent .tick--alert{background:var(--alert);box-shadow:0 0 12px -2px rgb(var(--alert-rgb)/.7)}
+.dsent .tick--dry{background:transparent;border:1px solid color-mix(in srgb,var(--alert) 60%,transparent)}
+/* readout cards */
+.dash__cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--d-line)}
+.rcard{background:var(--d-panel);padding:16px 18px}
+.rcard__k{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--d-muted)}
+.rcard__v{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--d-ink);margin-top:7px;letter-spacing:-.01em}
+.rcard__v.sm{font-size:15px;margin-top:10px}
+.rcard__spark{display:flex;align-items:flex-end;gap:3px;height:18px;margin-top:9px}
+.rcard__spark i{width:4px;background:#3a404b;border-radius:1px}
+@media(max-width:620px){.dash__cards{grid-template-columns:repeat(2,1fr)}}
+/* feed */
+.dfeed{border-top:1px solid var(--d-line)}
+.dfeed__h{display:flex;justify-content:space-between;align-items:baseline;padding:13px 18px 4px}
+.dfeed__h h4{margin:0;font-size:14px;font-family:var(--display);color:var(--d-ink)}
+.dfeed__h span{font-family:var(--mono);font-size:11px;color:var(--d-muted)}
+.frow{display:grid;grid-template-columns:84px 130px 1fr auto;gap:14px;align-items:center;padding:9px 18px;border-top:1px solid #ffffff08;font-family:var(--mono);font-size:12.5px;color:var(--d-muted)}
+.frow .ip{color:var(--d-ink)}
+.frow .det{color:var(--d-muted)}
+.ftag{justify-self:end;font-size:10.5px;padding:1px 8px;border-radius:5px}
+.ftag--ban{color:var(--alert);border:1px solid color-mix(in srgb,var(--alert) 40%,transparent)}
+.ftag--dry{color:var(--d-muted);border:1px solid var(--d-line)}
+@media(max-width:620px){.frow{grid-template-columns:70px 1fr auto}.frow .det{display:none}}
+
+/* ---------- install ---------- */
+.install-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:38px}
+.inst{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column}
+.inst h3{font-size:17px;display:flex;align-items:center;gap:9px}
+.inst h3 .d{width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.inst p{color:var(--muted);font-size:14px;margin:.6em 0 14px}
+.code{background:var(--ink);color:var(--paper);border-radius:9px;padding:13px;font-family:var(--mono);font-size:12.5px;
+  line-height:1.7;overflow-x:auto;margin-top:auto}
+.code .c{color:#6f7681}
+.code .a{color:#e98b7e}
+@media(max-width:860px){.install-grid{grid-template-columns:1fr}}
+
+/* ---------- compare ---------- */
+.cmp{margin-top:36px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.cmp table{width:100%;border-collapse:collapse;font-size:14.5px}
+.cmp th,.cmp td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--line)}
+.cmp thead th{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.cmp thead th.us{color:var(--ink)}
+.cmp tbody td{color:var(--muted)}
+.cmp tbody td:first-child{color:var(--ink);font-weight:500}
+.cmp td.us{background:color-mix(in srgb,var(--alert) 4%,var(--panel))}
+.yes{color:var(--ink);font-weight:600}
+.yes.us{color:var(--alert)}
+.no{color:#b7bcc4}
+.cmp tr:last-child td{border-bottom:none}
+@media(max-width:680px){.cmp{overflow-x:auto}.cmp table{min-width:560px}}
+
+/* ---------- faq ---------- */
+.faq__list{margin-top:30px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.qa{border-bottom:1px solid var(--line)}
+.qa:last-child{border-bottom:none}
+.qa summary{cursor:pointer;list-style:none;padding:18px 22px;font-family:var(--display);font-weight:600;font-size:17px;
+  display:flex;justify-content:space-between;align-items:center;gap:16px}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:"+";font-family:var(--mono);color:var(--muted);font-weight:400;font-size:20px}
+.qa[open] summary::after{content:"\2212"}
+.qa summary:hover{background:#fbfcfd}
+.qa p{margin:0 22px 20px;color:var(--muted);font-size:15.5px;max-width:74ch}
+.qa code{font-family:var(--mono);font-size:13px;background:#eef0f3;padding:1px 5px;border-radius:4px;color:var(--ink)}
+
+/* ---------- final cta ---------- */
+.final{text-align:center;padding:96px 0}
+.final h2{font-size:clamp(34px,6vw,60px)}
+.final p{color:var(--muted);font-size:19px;margin:18px auto 30px;max-width:48ch}
+.final .hero__cta{justify-content:center}
+
+/* ---------- footer ---------- */
+.foot{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:14px}
+.foot__in{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.foot a:hover{color:var(--ink)}
+.foot__links{display:flex;gap:20px}
+
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important}
+  .sentinel__track,.dsent__track{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav"><div class="wrap nav__in">
+  <a class="brand" href="#top"><span class="brand__mark">&#9651;</span> Edge Guardian</a>
+  <nav class="nav__links">
+    <a href="#why">Why</a><a href="#features">Features</a><a href="#how">How it works</a>
+    <a href="#dashboard">Dashboard</a><a href="#install">Install</a>
+  </nav>
+  <a class="nav__cta" href="https://github.com/sondt/edge-guardian">GitHub &#8599;</a>
+</div></header>
+
+<main id="main">
+<a id="top"></a>
+<!-- HERO -->
+<section class="hero"><div class="wrap">
+  <div class="eyebrow">Single&#8209;binary intrusion prevention &middot; Linux &middot; nftables</div>
+  <h1><span>Calm until</span> <span>something&nbsp;happens.</span></h1>
+  <p class="hero__sub">Edge Guardian watches your logs, bans scanners and brute&#8209;force at the firewall, and shows you everything in a dashboard that ships <b>free</b>. <b>One static binary.</b> One line to install.</p>
+  <div class="hero__cta">
+    <div class="cmd">
+      <span class="cmd__prompt">$</span>
+      <span class="cmd__txt" id="cmd">curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash</span>
+      <button class="cmd__copy" data-copy="curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash">copy</button>
+    </div>
+    <a class="btn-ghost" href="https://github.com/sondt/edge-guardian">Star on GitHub &#9733;</a>
+  </div>
+
+  <!-- SIGNATURE: the Sentinel line -->
+  <div class="sentinel" aria-hidden="true">
+    <div class="sentinel__label">Sentinel &middot; live exposure</div>
+    <div class="sentinel__read"><span>banned <b>142</b></span><span>events/24h <b>1,883</b></span></div>
+    <div class="sentinel__base"></div>
+    <div class="sentinel__fade sentinel__fade--l"></div>
+    <div class="sentinel__fade sentinel__fade--r"></div>
+    <div class="sentinel__track" id="sent"></div>
+  </div>
+
+  <div class="trust">
+    <span>&#9651; <b>single static binary</b></span>
+    <span>&#9651; no database, no agent</span>
+    <span>&#9651; nftables native</span>
+    <span>&#9651; dry&#8209;run safe start</span>
+    <span>&#9651; Apache&#8209;2.0</span>
+  </div>
+</div></section>
+
+<!-- PROBLEM -->
+<section class="sec problem" id="why"><div class="wrap">
+  <div class="sec__head">
+    <div class="eyebrow">The problem</div>
+    <h2>Every public server is under constant fire.</h2>
+    <p class="sec__lead">The moment a box has an IP, bots start probing it — looking for forgotten admin panels, leaked secrets, and weak SSH passwords. The tools that fight back all make you choose between <em>too fiddly</em> and <em>too heavy</em>.</p>
+  </div>
+
+  <div class="probe-list">
+    <div class="probe"><span>/wp&#8209;login.php</span><span class="x">drop</span></div>
+    <div class="probe"><span>/.env</span><span class="x">drop</span></div>
+    <div class="probe"><span>/.git/config</span><span class="x">drop</span></div>
+    <div class="probe"><span>/phpmyadmin/</span><span class="x">drop</span></div>
+    <div class="probe"><span>sshd: 5&times; fail</span><span class="x">drop</span></div>
+    <div class="probe"><span>:23 honeypot</span><span class="x">drop</span></div>
+  </div>
+
+  <div class="versus">
+    <div class="card"><h3>fail2ban</h3><p>Lightweight and proven — but only sees one host, leans hard on regex rules, and gets awkward the moment you have more than one box. No dashboard.</p></div>
+    <div class="card"><h3>CrowdSec</h3><p>Powerful, with community blocklists — but you're learning an agent, a local API, a bouncer, and collections. And the pretty console? That's the paid part.</p></div>
+  </div>
+</div></section>
+
+<!-- WEDGE -->
+<section class="sec" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="sec__head">
+    <div class="eyebrow">Why Edge Guardian</div>
+    <h2>Two things, done exceptionally well.</h2>
+  </div>
+  <div class="pillars" style="margin-top:34px">
+    <div class="pillar">
+      <div class="pillar__n">01</div>
+      <h3>Dead simple.</h3>
+      <p>One static Go binary you drop on a box, point at a log, and forget. Cross&#8209;compiles for any Linux from your Mac. Near&#8209;zero config.</p>
+      <ul>
+        <li>One&#8209;line install: binary + systemd + firewall, done</li>
+        <li>No database, no extra services, state is one JSON file</li>
+        <li><b>Dry&#8209;run mode</b> — detect &amp; alert without blocking, so you trust it before you arm it</li>
+        <li>Bans expire themselves via nftables timeouts</li>
+      </ul>
+    </div>
+    <div class="pillar pillar--accent">
+      <div class="pillar__n">02</div>
+      <h3>A dashboard that ships free.</h3>
+      <p>The thing others charge for, or make you wire up in Grafana. Embedded in the binary, served on localhost, beautiful by default.</p>
+      <ul>
+        <li>The <b>Sentinel line</b> — a live trace of your server's exposure</li>
+        <li>Banned&#8209;IP ledger with reason, origin &amp; one&#8209;click unban</li>
+        <li>Live feed of every detection, including dry&#8209;run would&#8209;bans</li>
+        <li>GeoIP origin &amp; top&#8209;attacker ranking — calm until it's not</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- FEATURES -->
+<section class="sec" id="features" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="sec__head">
+    <div class="eyebrow">Detection &middot; enforcement &middot; alerting</div>
+    <h2>Enough to actually run a server on.</h2>
+  </div>
+  <div class="feat">
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; HTTP</div><h3>Scanner paths</h3><p>Regex on request URIs — the .php/.env/wp&#8209;login probes a clean stack never serves. Ban on the first hit.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; SSH</div><h3>Brute&#8209;force</h3><p>Counts failed logins from auth.log / journald. Injection&#8209;hardened so a crafted username can't frame an innocent IP.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; NETWORK</div><h3>Port scan</h3><p>Counts <em>distinct</em> destination ports per IP via nftables logging. Hammering one port isn't a scan; sweeping many is.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; TRAP</div><h3>Honeypot ports</h3><p>Touch a decoy port, get banned instantly. The highest&#8209;quality signal there is — no legitimate reason to knock.</p></div>
+    <div class="feat__cell"><div class="feat__k">ENFORCE</div><h3>nftables bans<span class="tag">escalating</span></h3><p>Dropped at the kernel via a timeout set. Repeat offenders are punished harder: a day, a week, a month, forever.</p></div>
+    <div class="feat__cell"><div class="feat__k">INTEL</div><h3>Public blocklists</h3><p>Import FireHOL &amp; Spamhaus DROP into an nftables interval set — block known&#8209;bad ranges before they ever reach you.</p></div>
+    <div class="feat__cell"><div class="feat__k">ALERT</div><h3>Telegram &amp; Email</h3><p>Real&#8209;time on every ban, to all channels at once. Email via Resend. Enriched with country &amp; ASN when GeoIP is on.</p></div>
+    <div class="feat__cell"><div class="feat__k">GEO</div><h3>Offline GeoIP</h3><p>Country, region &amp; ISP from local MMDB files — works with the <em>free</em> sapics databases, no MaxMind account.</p></div>
+    <div class="feat__cell"><div class="feat__k">SAFE</div><h3>Allowlist &amp; dry&#8209;run</h3><p>CIDR allowlist for your office, VPN &amp; monitoring. Dry&#8209;run to observe for days before you flip the switch.</p></div>
+  </div>
+</div></section>
+
+<!-- HOW -->
+<section class="sec" id="how" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="sec__head">
+    <div class="eyebrow">How it works</div>
+    <h2>One pipeline. Every detector flows through it.</h2>
+    <p class="sec__lead">Read a log line, decide, enforce at the kernel, tell you. Adding a new source is a parser and a threshold — never a rewrite.</p>
+  </div>
+  <div class="flow">
+    <div class="flow__step"><div class="flow__n">01</div><h3>Tail</h3><p>nginx, sshd &amp; kernel logs — follows rotation.</p></div>
+    <div class="flow__step"><div class="flow__n">02</div><h3>Detect</h3><p>Parse the source IP, match against a sliding window + threshold.</p></div>
+    <div class="flow__step"><div class="flow__n">03</div><h3>Allowlist?</h3><p>Your CIDRs are never touched. The last line of defense against self&#8209;lockout.</p></div>
+    <div class="flow__step flow__step--ban"><div class="flow__n">04</div><h3>Ban</h3><p>Add to the nftables set with a timeout. Dropped on every port, instantly.</p></div>
+    <div class="flow__step"><div class="flow__n">05</div><h3>Notify</h3><p>Telegram, email, the dashboard feed &amp; the Sentinel line.</p></div>
+  </div>
+</div></section>
+
+<!-- DASHBOARD SHOWCASE -->
+<section class="sec show" id="dashboard"><div class="wrap">
+  <div class="sec__head">
+    <div class="eyebrow">The wedge</div>
+    <h2>See exactly who's hitting you.</h2>
+    <p class="show__lead">A calm instrument that stays quiet until it matters. When the Sentinel line spikes red, it <em>means</em> something. This ships in the free binary — no Grafana, no paywall.</p>
+  </div>
+
+  <div class="dash" aria-hidden="true">
+    <div class="dash__bar">
+      <div class="dash__brand"><span class="m">&#9651;</span> Edge Guardian</div>
+      <div class="dash__nav"><span class="on">Overview</span><span>Bans</span><span>Feed</span><span>Detectors</span></div>
+      <span class="chip" data-state="alert"><span class="chip__dot"></span> Under scan</span>
+      <span class="dash__host">edge&#8209;01</span>
+    </div>
+    <div class="dsent"><div class="dsent__track" id="dsent"></div></div>
+    <div class="dash__cards">
+      <div class="rcard"><div class="rcard__k">Banned</div><div class="rcard__v">142</div>
+        <div class="rcard__spark"><i style="height:5px"></i><i style="height:9px"></i><i style="height:14px"></i><i style="height:8px"></i><i style="height:6px"></i></div></div>
+      <div class="rcard"><div class="rcard__k">Events &middot; 24h</div><div class="rcard__v">1,883</div>
+        <div class="rcard__spark"><i style="height:6px"></i><i style="height:11px"></i><i style="height:18px"></i><i style="height:12px"></i><i style="height:7px"></i></div></div>
+      <div class="rcard"><div class="rcard__k">Top origin</div><div class="rcard__v sm">AS4837 &middot; CN</div>
+        <div class="rcard__spark"><i style="height:14px"></i><i style="height:9px"></i><i style="height:5px"></i></div></div>
+      <div class="rcard"><div class="rcard__k">By type</div><div class="rcard__v sm">http 71%</div>
+        <div class="rcard__spark"><i style="height:16px"></i><i style="height:7px"></i><i style="height:5px"></i><i style="height:4px"></i></div></div>
+    </div>
+    <div class="dfeed">
+      <div class="dfeed__h"><h4>Recent</h4><span>refreshes every 5s</span></div>
+      <div class="frow"><span>09:41:02</span><span class="ip">185.220.101.5</span><span class="det">http &middot; /wp&#8209;login.php &middot; DE</span><span class="ftag ftag--ban">banned</span></div>
+      <div class="frow"><span>09:40:55</span><span class="ip">92.118.39.10</span><span class="det">portscan &middot; 14 ports &middot; RU</span><span class="ftag ftag--ban">banned</span></div>
+      <div class="frow"><span>09:40:48</span><span class="ip">45.13.22.7</span><span class="det">honeypot &middot; :23 &middot; US</span><span class="ftag ftag--ban">banned</span></div>
+      <div class="frow"><span>09:40:31</span><span class="ip">103.74.19.88</span><span class="det">sshd &middot; invalid user root &middot; VN</span><span class="ftag ftag--dry">would&#8209;ban</span></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- INSTALL -->
+<section class="sec" id="install" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="sec__head">
+    <div class="eyebrow">Install</div>
+    <h2>Up and watching in a minute.</h2>
+    <p class="sec__lead">Starts in dry&#8209;run, so it observes without blocking until you're ready. Then flip one line.</p>
+  </div>
+  <div class="install-grid">
+    <div class="inst">
+      <h3><span class="d"></span> One line</h3>
+      <p>Detects your arch, installs the binary + systemd unit, and initializes nftables.</p>
+      <pre class="code"><span class="c"># Linux, needs nftables + root</span>
+curl -fsSL https://raw.githubusercontent.com/<wbr>sondt/edge-guardian/main/install.sh \
+  | sudo bash</pre>
+    </div>
+    <div class="inst">
+      <h3><span class="d"></span> .deb / .rpm</h3>
+      <p>Native packages for amd64 &amp; arm64. Config is a conffile — safe across upgrades.</p>
+      <pre class="code"><span class="c"># Debian / Ubuntu</span>
+sudo apt install ./edge-guardian_<span class="a">0.1.0</span>_amd64.deb
+<span class="c"># RHEL / Rocky / Fedora</span>
+sudo dnf install ./edge-guardian-<span class="a">0.1.0</span>.amd64.rpm</pre>
+    </div>
+    <div class="inst">
+      <h3><span class="d"></span> Docker</h3>
+      <p>Protects the host firewall via the host network namespace.</p>
+      <pre class="code">docker run -d --name edge-guardian \
+  --network host --cap-add NET_ADMIN \
+  -v /etc/edge-guardian:/etc/edge-guardian \
+  ghcr.io/sondt/edge-guardian</pre>
+    </div>
+  </div>
+</div></section>
+
+<!-- COMPARE -->
+<section class="sec" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="sec__head"><div class="eyebrow">In a glance</div><h2>How it stacks up.</h2></div>
+  <div class="cmp">
+    <table>
+      <thead><tr><th>&nbsp;</th><th class="us">Edge Guardian</th><th>fail2ban</th><th>CrowdSec</th></tr></thead>
+      <tbody>
+        <tr><td>Single static binary</td><td class="us"><span class="yes us">Yes</span></td><td class="no">&mdash;</td><td class="no">&mdash;</td></tr>
+        <tr><td>One&#8209;line install</td><td class="us"><span class="yes us">Yes</span></td><td class="no">pkg</td><td class="no">script + repo</td></tr>
+        <tr><td>Dashboard in the free tier</td><td class="us"><span class="yes us">Yes</span></td><td class="no">&mdash;</td><td class="no">paid / DIY Grafana</td></tr>
+        <tr><td>HTTP + SSH + port&#8209;scan + honeypot</td><td class="us"><span class="yes us">Yes</span></td><td><span class="yes">via rules</span></td><td><span class="yes">scenarios</span></td></tr>
+        <tr><td>nftables&#8209;native enforcement</td><td class="us"><span class="yes us">Yes</span></td><td><span class="yes">backend</span></td><td><span class="yes">bouncer</span></td></tr>
+        <tr><td>Public blocklist import</td><td class="us"><span class="yes us">Yes</span></td><td class="no">&mdash;</td><td><span class="yes">community</span></td></tr>
+        <tr><td>No external service to run</td><td class="us"><span class="yes us">Yes</span></td><td><span class="yes">Yes</span></td><td class="no">local API</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div></section>
+
+<!-- FAQ -->
+<section class="sec faq" id="faq" style="border-top:1px solid var(--line)"><div class="wrap">
+  <div class="sec__head"><div class="eyebrow">Questions</div><h2>Straight answers.</h2></div>
+  <div class="faq__list">
+    <details class="qa" open>
+      <summary>What is edge-guardian?</summary>
+      <p>edge-guardian is a free, open-source, single-binary intrusion prevention daemon for Linux. It reads your server logs, detects scanners and brute-force attacks, bans the source IPs at the nftables firewall, alerts you via Telegram or email, and ships with a built-in local dashboard.</p>
+    </details>
+    <details class="qa">
+      <summary>How is edge-guardian different from fail2ban and CrowdSec?</summary>
+      <p>fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections — and its dashboard is a paid feature. edge-guardian is a single static binary with a one-line install and a dashboard included free.</p>
+    </details>
+    <details class="qa">
+      <summary>Is edge-guardian free?</summary>
+      <p>Yes. edge-guardian is free and open source under the Apache-2.0 license, including the dashboard.</p>
+    </details>
+    <details class="qa">
+      <summary>What does edge-guardian need to run?</summary>
+      <p>A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required.</p>
+    </details>
+    <details class="qa">
+      <summary>What attacks does edge-guardian detect?</summary>
+      <p>HTTP scanner paths, SSH brute-force, port scans (by counting distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus.</p>
+    </details>
+    <details class="qa">
+      <summary>How do I install edge-guardian?</summary>
+      <p>Run the one-line installer (<code>curl -fsSL .../install.sh | sudo bash</code>), install the <code>.deb</code> or <code>.rpm</code> package, or run the Docker image. edge-guardian starts in dry-run mode so it observes and alerts before it blocks.</p>
+    </details>
+  </div>
+</div></section>
+
+<!-- FINAL CTA -->
+<section class="sec final"><div class="wrap">
+  <h2>Drop it on a box.<br>Forget about scanners.</h2>
+  <p>Free, open source, and built to stay out of your way until something actually happens.</p>
+  <div class="hero__cta">
+    <div class="cmd">
+      <span class="cmd__prompt">$</span>
+      <span class="cmd__txt">curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash</span>
+      <button class="cmd__copy" data-copy="curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash">copy</button>
+    </div>
+    <a class="btn-ghost" href="https://github.com/sondt/edge-guardian">View source &#8599;</a>
+  </div>
+</div></section>
+</main>
+
+<!-- FOOTER -->
+<footer class="foot"><div class="wrap foot__in">
+  <div class="brand" style="font-size:16px"><span class="brand__mark" style="width:22px;height:22px;font-size:13px">&#9651;</span> Edge Guardian</div>
+  <div class="foot__links">
+    <a href="https://github.com/sondt/edge-guardian">GitHub</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/sondt/edge-guardian/blob/main/docs/README.md">Docs</a>
+  </div>
+  <div>Apache&#8209;2.0 &middot; built in Go &middot; <span class="alert-text">calm until something happens</span></div>
+</div></footer>
+
+<script>
+// Build the Sentinel ticks (seismograph: mostly quiet, occasional spikes; a few alert).
+(function(){
+  function strip(heights){
+    return heights.map(function(h){
+      var c="tick", hh=h.h;
+      if(h.t==="a")c+=" tick--alert"; else if(h.t==="d")c+=" tick--dry"; else if(h.h>26)c+=" tick--mid";
+      return '<span class="'+c+'" style="height:'+hh+'px"></span>';
+    }).join("");
+  }
+  // a believable exposure pattern (px heights; t: a=alert, d=dry, else normal)
+  var base=[6,9,7,11,8,6,7,5,9,7,6,8,10,7,6, 38,'A', 12,8,6,9,7,6,8,5,7,9,6,8,7,6,10,7,6,8,
+            44,'A', 9,7,6,8,6,9,7,11,8,6,7,9,6,8,7,6, 30,'D', 8,6,9,7,6,5,8,7,6,9,7,6,8,10,7,
+            52,'A', 7,9,6,8,7,6,10,8,6,7,9,6,8,7,6,9,7, 26,'D', 8,6,9,7,6,8,7,9,6,8,7,6,10,7,6];
+  var seq=[]; for(var i=0;i<base.length;i++){
+    if(base[i]==='A'){seq[seq.length-1].t='a';continue}
+    if(base[i]==='D'){seq[seq.length-1].t='d';continue}
+    seq.push({h:base[i],t:'n'});
+  }
+  var html=strip(seq)+strip(seq); // duplicate for seamless -50% loop
+  var s=document.getElementById('sent'); if(s)s.innerHTML=html;
+  var d=document.getElementById('dsent'); if(d)d.innerHTML=html;
+})();
+// copy buttons
+document.addEventListener('click',function(e){
+  var b=e.target.closest('.cmd__copy'); if(!b)return;
+  navigator.clipboard&&navigator.clipboard.writeText(b.dataset.copy);
+  var t=b.textContent; b.textContent='copied'; setTimeout(function(){b.textContent=t},1400);
+});
+</script>
+</body>
+</html>

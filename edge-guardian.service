@@ -1,0 +1,24 @@
+[Unit]
+Description=Edge Guardian - log-driven intrusion prevention + edge health for Linux
+Documentation=https://giaiphapmoipro.vn
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/edge-guardian --config /etc/edge-guardian/config.toml
+Restart=always
+RestartSec=3
+
+# Cần quyền thao tác nftables. Chạy root là đơn giản nhất cho tool nội bộ;
+# nếu muốn siết, có thể bỏ User=root và dùng AmbientCapabilities=CAP_NET_ADMIN.
+User=root
+
+# Hardening cơ bản (giữ CAP_NET_ADMIN để chạy nft).
+NoNewPrivileges=false
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/edge-guardian
+
+[Install]
+WantedBy=multi-user.target

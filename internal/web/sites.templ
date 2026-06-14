@@ -1,0 +1,70 @@
+package web
+
+import "fmt"
+
+// SitesPage lists each monitored site as a card: status, request rate (sparkline), 5xx
+// ratio, p95 latency and upstream errors. Read-only. Health answers "is anything wrong?"
+// — never "who is viewing what" (that's analytics, deliberately out of scope).
+templ SitesPage(pd PageData, sites []siteView) {
+	@Layout(pd) {
+		<section class="panel">
+			<div class="panel__head">
+				<h2 class="panel__title">Site health</h2>
+				<span class="panel__hint">{ fmt.Sprintf("%d site(s) · last %dm", len(sites), pd.HealthWindowMins) }</span>
+			</div>
+			if len(sites) == 0 {
+				<div class="empty">
+					<p class="empty__title">No site data yet</p>
+					<p class="empty__hint">
+						Enable <code>[health]</code> and point Edge Guardian at an access log carrying
+						host + status. For latency and per-site stats, switch nginx to the JSON log format.
+					</p>
+				</div>
+			} else {
+				<div class="sites">
+					for _, s := range sites {
+						@siteCard(s)
+					}
+				</div>
+			}
+		</section>
+	}
+}
+
+templ siteCard(s siteView) {
+	<article class={ "sitecard", s.StatusClass }>
+		<div class="sitecard__head">
+			<span class="sitecard__host mono">{ s.Host }</span>
+			<span class={ "sitecard__status", s.StatusClass }>
+				<span class="sitecard__dot" aria-hidden="true">{ s.StatusDot }</span>
+				{ s.Status }
+			</span>
+		</div>
+		<div class="sitecard__spark">
+			if s.SparkPoints != "" {
+				<svg viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true">
+					<polyline points={ s.SparkPoints }></polyline>
+				</svg>
+			} else {
+				<div class="sitecard__flat" aria-hidden="true"></div>
+			}
+		</div>
+		<div class="sitecard__grid">
+			@kv("req/s", s.ReqPerSec)
+			@kv("5xx", s.Err5xx)
+			if s.HasLatency {
+				@kv("p95", s.P95)
+			}
+			if s.UpstreamErr != "" {
+				@kv("upstream", s.UpstreamErr)
+			}
+		</div>
+	</article>
+}
+
+templ kv(k, v string) {
+	<div class="kv">
+		<span class="kv__k">{ k }</span>
+		<span class="kv__v mono">{ v }</span>
+	</div>
+}

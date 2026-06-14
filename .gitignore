@@ -1,0 +1,24 @@
+# Build output
+/dist/
+/edge-guardian
+/edge-guardian-*
+
+# Local config & runtime state (never commit secrets)
+config.toml
+!packaging/config.toml
+/state.json
+*.mmdb
+
+# Go
+*.test
+*.out
+coverage.out
+
+# Editor / OS
+.DS_Store
+
+# Local demo runtime
+/dev/run/
+
+# Internal design docs — kept local, not published to the public repo
+/docs/

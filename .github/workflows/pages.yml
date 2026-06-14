@@ -1,0 +1,37 @@
+name: Deploy landing page
+
+# Deploys landing/ to GitHub Pages. Enable once: Settings -> Pages -> Source: GitHub
+# Actions. (Pages on a private repo needs a paid plan; make the repo public to use it
+# for free, or deploy landing/ to Netlify/Cloudflare instead — see landing/README.md.)
+#
+# Manual-only for now so it doesn't fail before Pages is enabled. Once Pages is on,
+# uncomment the push trigger below to auto-deploy on every landing change.
+on:
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths: ["landing/**", ".github/workflows/pages.yml"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: landing
+      - id: deployment
+        uses: actions/deploy-pages@v4

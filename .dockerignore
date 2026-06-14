@@ -1,0 +1,9 @@
+# Keep the build context small and reproducible.
+/dist/
+/dev/run/
+.git/
+.github/
+*.deb
+*.rpm
+.DS_Store
+# Generated templ files ARE committed and needed for the build — do NOT ignore them.

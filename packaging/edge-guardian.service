@@ -1,0 +1,22 @@
+[Unit]
+Description=edge-guardian intrusion prevention daemon
+Documentation=https://github.com/giaiphapmoipro/edge-guardian
+After=network-online.target nginx.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/edge-guardian --config /etc/edge-guardian/config.toml
+Restart=always
+RestartSec=3
+
+# Needs CAP_NET_ADMIN for nftables. Running as root is simplest for an internal tool.
+User=root
+NoNewPrivileges=false
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/edge-guardian
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

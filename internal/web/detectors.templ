@@ -1,0 +1,34 @@
+package web
+
+// DetectorsPage is read-only for the MVP: it lists each detector, what it watches, and
+// its recent share of activity drawn from the live metrics. No thresholds are editable
+// yet (that ships later).
+templ DetectorsPage(pd PageData, m Metrics) {
+	@Layout(pd) {
+		<section class="panel">
+			<div class="panel__head">
+				<h2 class="panel__title">Detectors</h2>
+				<span class="panel__hint">Read-only in this build · activity from the last 24h</span>
+			</div>
+			<div class="detectors">
+				for _, d := range knownDetectors() {
+					@detectorCard(d, detectorShare(m, d.Key))
+				}
+			</div>
+		</section>
+	}
+}
+
+templ detectorCard(d detectorInfo, share float64) {
+	<article class="detcard">
+		<div class="detcard__head">
+			<span class="detcard__name mono">{ d.Key }</span>
+			<span class="detcard__share mono">{ pct(share) }</span>
+		</div>
+		<p class="detcard__desc">{ d.Desc }</p>
+		<div class="detcard__bar">
+			<div class="detcard__fill" style={ barWidth(share) }></div>
+		</div>
+		<div class="detcard__meta">{ d.Watches }</div>
+	</article>
+}

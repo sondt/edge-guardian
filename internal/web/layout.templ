@@ -1,0 +1,90 @@
+package web
+
+// Layout is the HTML shell: head, top bar, Sentinel line, and the page body via
+// children. It is the single frame every authenticated page renders inside.
+templ Layout(pd PageData) {
+	<!DOCTYPE html>
+	<html lang="en" data-theme="light">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="color-scheme" content="light dark"/>
+			<meta name="csrf-token" content={ pd.CSRFToken }/>
+			<title>{ pd.Title } · edge-guardian</title>
+			<link rel="stylesheet" href="/static/app.css"/>
+			<link rel="preload" href="/static/fonts/spacegrotesk.woff2" as="font" type="font/woff2" crossorigin/>
+			<link rel="preload" href="/static/fonts/plexsans.woff2" as="font" type="font/woff2" crossorigin/>
+			<link rel="preload" href="/static/fonts/plexmono-400.woff2" as="font" type="font/woff2" crossorigin/>
+			<script src="/static/htmx.min.js" defer></script>
+			<script src="/static/app.js" defer></script>
+		</head>
+		<body
+			hx-headers={ pd.hxHeaders() }
+			data-state={ stateAttr(pd.UnderAtk) }
+		>
+			@TopBar(pd)
+			<div id="sentinel-wrap" class="sentinel-wrap" hx-get="/_p/sentinel" hx-trigger="every 3s" hx-swap="innerHTML">
+				@Sentinel(pd.Metrics)
+			</div>
+			<main class="shell">
+				{ children... }
+			</main>
+		</body>
+	</html>
+}
+
+// TopBar holds the wordmark, the live state chip, host, and the theme toggle.
+templ TopBar(pd PageData) {
+	<header class="topbar">
+		<div class="topbar__left">
+			<a class="wordmark" href="/" aria-label="edge-guardian home">
+				<span class="wordmark__mark" aria-hidden="true">◳</span>
+				<span class="wordmark__text">Edge Guardian</span>
+			</a>
+			<nav class="nav" aria-label="Primary">
+				@navLink("/", "Overview", pd.Nav == "overview")
+				@navLink("/bans", "Bans", pd.Nav == "bans")
+				@navLink("/feed", "Feed", pd.Nav == "feed")
+				if pd.HealthEnabled {
+					@navLink("/sites", "Sites", pd.Nav == "sites")
+				}
+				@navLink("/detectors", "Detectors", pd.Nav == "detectors")
+			</nav>
+		</div>
+		<div class="topbar__right">
+			<span id="state-chip-slot">
+				@StateChip(pd.State, pd.UnderAtk)
+			</span>
+			<span class="host" title="monitored host">{ pd.Host }</span>
+			<button
+				type="button"
+				class="iconbtn"
+				data-theme-toggle
+				aria-label="Toggle dark theme"
+				title="Toggle theme"
+			>
+				<span class="iconbtn__glyph" aria-hidden="true">☾</span>
+			</button>
+			<form method="post" action="/logout" class="logout-form" hx-post="/logout" hx-swap="none">
+				<button type="submit" class="iconbtn" aria-label="Log out" title="Log out">
+					<span class="iconbtn__glyph" aria-hidden="true">⎋</span>
+				</button>
+			</form>
+		</div>
+	</header>
+}
+
+templ navLink(href, label string, active bool) {
+	if active {
+		<a class="nav__link is-active" href={ templ.SafeURL(href) } aria-current="page">{ label }</a>
+	} else {
+		<a class="nav__link" href={ templ.SafeURL(href) }>{ label }</a>
+	}
+}
+
+func stateAttr(underAtk bool) string {
+	if underAtk {
+		return "alert"
+	}
+	return "quiet"
+}

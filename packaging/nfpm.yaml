@@ -1,0 +1,49 @@
+# nfpm config — builds .deb and .rpm. Driven by env: ARCH, VERSION, BIN.
+# See dev/build-packages.sh.
+name: edge-guardian
+arch: ${ARCH}
+version: ${VERSION}
+section: net
+priority: optional
+maintainer: Giai Phap Moi Pro <son@giaiphapmoipro.vn>
+description: |
+  Lightweight single-binary intrusion prevention daemon for Linux.
+  Detects scanners and brute-force from logs, bans source IPs at the nftables
+  firewall, and alerts in real time (Telegram/email). Includes a local dashboard.
+vendor: Giai Phap Moi Pro
+homepage: https://github.com/sondt/edge-guardian
+license: Apache-2.0
+
+depends:
+  - nftables
+
+contents:
+  - src: ${BIN}
+    dst: /usr/bin/edge-guardian
+    file_info:
+      mode: 0755
+
+  - src: packaging/edge-guardian.service
+    dst: /lib/systemd/system/edge-guardian.service
+
+  - src: packaging/config.toml
+    dst: /etc/edge-guardian/config.toml
+    type: "config|noreplace"
+    file_info:
+      mode: 0600
+
+  - src: config.example.toml
+    dst: /usr/share/edge-guardian/config.example.toml
+
+  - src: setup-nftables.sh
+    dst: /usr/share/edge-guardian/setup-nftables.sh
+    file_info:
+      mode: 0755
+
+  - src: README.md
+    dst: /usr/share/doc/edge-guardian/README.md
+
+scripts:
+  postinstall: packaging/scripts/postinstall.sh
+  preremove: packaging/scripts/preremove.sh
+  postremove: packaging/scripts/postremove.sh

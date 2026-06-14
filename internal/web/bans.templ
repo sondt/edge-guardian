@@ -1,0 +1,119 @@
+package web
+
+import "fmt"
+
+// Bans is the ledger workhorse: dense but readable. Search + detector filter use GET
+// forms that re-render the page; unban is an inline write action with confirm + OOB
+// counter update.
+templ Bans(pd PageData, rows []banView, detectors []string, q, detector string, total int) {
+	@Layout(pd) {
+		<section class="panel">
+			<div class="panel__head panel__head--ledger">
+				<h2 class="panel__title">
+					Banned IPs
+					<span id="ban-count" class="count mono">{ fmt.Sprintf("· %d", total) }</span>
+				</h2>
+				<form class="filters" method="get" action="/bans" role="search">
+					<input
+						class="input mono"
+						type="search"
+						name="q"
+						value={ q }
+						placeholder="search ip / asn / country"
+						aria-label="Search bans"
+						autocomplete="off"
+					/>
+					<select class="select" name="detector" aria-label="Filter by detector">
+						<option value="">All detectors</option>
+						for _, d := range detectors {
+							if d == detector {
+								<option value={ d } selected>{ d }</option>
+							} else {
+								<option value={ d }>{ d }</option>
+							}
+						}
+					</select>
+					<button class="btn" type="submit">Filter</button>
+				</form>
+			</div>
+			if len(rows) == 0 {
+				@bansEmpty(total)
+			} else {
+				<div class="table-wrap">
+					<table class="ledger">
+						<thead>
+							<tr>
+								<th scope="col">IP</th>
+								<th scope="col">Detector</th>
+								<th scope="col">Reason</th>
+								<th scope="col">First seen</th>
+								<th scope="col">Expires</th>
+								<th scope="col">Origin</th>
+								<th scope="col" class="ledger__act">Hits</th>
+								<th scope="col"><span class="visually-hidden">Action</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, b := range rows {
+								@BanRow(b)
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</section>
+	}
+}
+
+// BanRow is one ledger row, reusable so an unban can swap exactly this element. On
+// mobile, CSS turns each row into a stacked card via the data-label attributes.
+templ BanRow(b banView) {
+	<tr class="ledger__row">
+		<td class="mono" data-label="IP">{ b.IP }</td>
+		<td data-label="Detector"><span class="tag tag--detector">{ orDash(b.Detector) }</span></td>
+		<td class="mono ledger__reason" data-label="Reason" title={ b.Reason }>{ orDash(b.Reason) }</td>
+		<td class="mono" data-label="First seen">{ b.FirstSeenHM }</td>
+		<td class={ "mono", "ledger__expires", templ.KV("is-expired", b.Expired) } data-label="Expires">{ b.Expires }</td>
+		<td class="mono" data-label="Origin">{ b.Origin }</td>
+		<td class="mono ledger__act" data-label="Hits">{ fmt.Sprintf("%d", b.Hits) }</td>
+		<td class="ledger__act">
+			<button
+				class="btn btn--danger"
+				type="button"
+				hx-post={ unbanURL(b.IP) }
+				hx-confirm={ fmt.Sprintf("Unban %s?", b.IP) }
+				hx-target="closest tr"
+				hx-swap="outerHTML swap:200ms"
+			>Unban</button>
+		</td>
+	</tr>
+}
+
+// UnbanResult is returned after a successful unban: an empty (vanishing) row plus an
+// out-of-band swap of the ban counter — no page reload.
+templ UnbanResult(remaining int) {
+	<tr class="ledger__row ledger__row--gone" aria-hidden="true"></tr>
+	<span id="ban-count" class="count mono" hx-swap-oob="true">{ fmt.Sprintf("· %d", remaining) }</span>
+}
+
+// UnbanError replaces the row in place with a small inline error, directive not
+// apologetic, so the user knows the action did not take.
+templ UnbanError(ip string) {
+	<tr class="ledger__row ledger__row--error">
+		<td class="mono" colspan="8">Couldn&#39;t unban { ip }. It may have already expired — refresh the page.</td>
+	</tr>
+}
+
+templ bansEmpty(total int) {
+	if total == 0 {
+		<div class="empty">
+			<p class="empty__title">No bans yet. edge-guardian is watching.</p>
+			<p class="empty__hint">When a detector trips, the offending IP lands here.</p>
+		</div>
+	} else {
+		<div class="empty">
+			<p class="empty__title">No bans match your filter.</p>
+			<p class="empty__hint">Clear the search or detector filter to see all { fmt.Sprintf("%d", total) } bans.</p>
+		</div>
+	}
+}

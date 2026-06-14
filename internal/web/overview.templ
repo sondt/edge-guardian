@@ -1,0 +1,49 @@
+package web
+
+import "fmt"
+
+// SiteHealthReadout is the Overview banner summarizing monitored sites: overall state
+// plus how many are degraded/down. Neutral when all healthy; --alert tone otherwise.
+templ SiteHealthReadout(s SiteSummary) {
+	<a class={ "sitebanner", siteSummaryClass(s) } href="/sites">
+		<div class="sitebanner__main">
+			<span class="sitebanner__label">Site health</span>
+			<span class="sitebanner__state">{ s.State }</span>
+		</div>
+		<div class="sitebanner__meta mono">
+			if s.Down > 0 {
+				<span>{ fmt.Sprintf("%d down", s.Down) }</span>
+			}
+			if s.Degraded > 0 {
+				<span>{ fmt.Sprintf("%d degraded", s.Degraded) }</span>
+			}
+			<span>{ fmt.Sprintf("%d site(s)", s.Total) }</span>
+		</div>
+	</a>
+}
+
+// Overview is the home screen: the readout cards (live-polling) and the recent feed
+// (live-polling), framed by the shared Layout (which carries the Sentinel line).
+templ Overview(pd PageData, m Metrics, events []eventView, sites SiteSummary) {
+	@Layout(pd) {
+		@ReadoutsSection(m)
+		if pd.HealthEnabled && sites.Total > 0 {
+			@SiteHealthReadout(sites)
+		}
+		<section class="panel feed-panel">
+			<div class="panel__head">
+				<h2 class="panel__title">Recent</h2>
+				<a class="link" href="/feed">See all &rarr;</a>
+			</div>
+			<div
+				id="recent-feed"
+				class="feed"
+				hx-get="/_p/feed"
+				hx-trigger="every 5s"
+				hx-swap="innerHTML"
+			>
+				@FeedList(events)
+			</div>
+		</section>
+	}
+}

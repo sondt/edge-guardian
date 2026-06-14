@@ -1,0 +1,12 @@
+# Dockerfile used by GoReleaser: the binary is already built and placed in the build
+# context, so this just assembles the runtime image (debian-slim + nft + CA certs).
+FROM debian:12-slim
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends nftables ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+COPY edge-guardian /usr/bin/edge-guardian
+COPY config.example.toml /usr/share/edge-guardian/config.example.toml
+COPY setup-nftables.sh /usr/share/edge-guardian/setup-nftables.sh
+VOLUME /var/lib/edge-guardian
+ENTRYPOINT ["/usr/bin/edge-guardian"]
+CMD ["--config", "/etc/edge-guardian/config.toml"]

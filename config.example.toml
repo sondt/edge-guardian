@@ -1,0 +1,215 @@
+# edge-guardian — file cấu hình mẫu
+# Copy thành /etc/edge-guardian/config.toml rồi chỉnh cho phù hợp.
+
+[log]
+# File log nginx cần theo dõi. Đặt edge-guardian TẠI node nginx cân tải,
+# nơi log ghi IP thật của client (không phải IP backend).
+paths = ["/var/log/nginx/access.log"]
+
+# Regex trích xuất. Bắt buộc có group `ip` và `uri`; group tùy chọn `ua` (cho [badbot]),
+# `status`/`bytes` (cho [health]). Mặc định khớp combined log của nginx, đuôi optional nên
+# vẫn match log thiếu UA. Bỏ trống = dùng mặc định.
+# Nếu nginx đứng sau LB/CDN khác, cấu hình real_ip hoặc đổi regex lấy IP từ X-Forwarded-For.
+# DÒNG JSON (bắt đầu '{') được tự nhận dạng, KHÔNG cần regex — khuyến nghị cho [health]
+# (xem docs/10): host + request_time chỉ có ở JSON. Mẫu log_format JSON:
+#   log_format ns_json escape=json '{"time":"$time_iso8601","host":"$host",'
+#     '"remote_addr":"$remote_addr","method":"$request_method","uri":"$uri",'
+#     '"status":$status,"request_time":$request_time,"upstream_status":"$upstream_status",'
+#     '"bytes":$body_bytes_sent,"ua":"$http_user_agent"}';
+# line_regex = '^(?P<ip>\S+) \S+ \S+ \[[^\]]+\] "(?:\S+) (?P<uri>\S+)[^"]*" (?:(?P<status>\d+) (?P<bytes>\S+) "[^"]*" "(?P<ua>[^"]*)")?'
+
+[detection]
+# Các regex (tự động case-insensitive) áp lên URI. Khớp bất kỳ = đáng chặn.
+# Vì stack là Rust/Axum + SvelteKit (không có PHP/CGI), mọi request tới các path
+# dưới đây đều là scanner → false positive gần như bằng 0.
+bad_uri_patterns = [
+    '\.(php|cgi|asp|aspx|jsp|env|git|sql|bak)(\?|/|$)',
+    '/(wp-admin|wp-login|wp-content|wp-includes|xmlrpc)',
+    '/(phpmyadmin|pma|adminer|mysqladmin|dbadmin)',
+    '/(\.env|\.git|\.aws|\.ssh|\.docker)',
+    '/(vendor/phpunit|eval-stdin|cgi-bin)',
+]
+
+# 1 = chặn ngay lần đầu (khuyến nghị với các path rác chắc chắn xấu).
+# Tăng lên nếu pattern của anh có khả năng dính nhầm.
+threshold = 1
+window_secs = 60
+
+# Dry-run: phát hiện + ghi log "WOULD ban" + thông báo, nhưng KHÔNG thêm vào
+# nftables. Bật khi chạy thử trên production để quan sát/tinh chỉnh pattern vài
+# ngày trước khi bật chặn thật. Mặc định false (chặn thật).
+dry_run = false
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [exploit] — phát hiện chữ ký tấn công trong URI (cùng access log với [detection]):
+# SQLi, path-traversal/LFI, RCE-probe, Log4Shell/JNDI, XSS rõ ràng.
+#
+# MẶC ĐỊNH TẮT. Khác với [detection] (chặn theo *đường dẫn* scanner — false positive
+# gần như 0), [exploit] khớp theo *payload* nên rủi ro dính nhầm cao hơn. KHUYẾN NGHỊ:
+# bật cùng dry_run = true ở [detection] để quan sát "WOULD ban" vài ngày, tỉa pattern,
+# rồi mới chặn thật. Để trống `patterns` = dùng bộ chữ ký mặc định trong mã nguồn.
+[exploit]
+enabled = false
+threshold = 2        # số probe trong cửa sổ để ban (2 = bỏ qua 1 cú dò lẻ ngẫu nhiên)
+window_secs = 60
+# patterns = [        # bỏ comment để override bộ mặc định
+#     '(\.\.(/|\\|%2f|%5c)){2,}',
+#     'union(\s|\+|%20)+select',
+#     '\$\{(jndi|env|sys):',
+# ]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [badbot] — phát hiện theo User-Agent: công cụ pentest/scanner (sqlmap, nikto,
+# nuclei, masscan…) và thư viện tự động lạm dụng. Đọc cùng access log nhưng khớp
+# trường user-agent → CẦN group (?P<ua>...) trong [log].line_regex (mặc định đã có).
+#
+# MẶC ĐỊNH TẮT. Bộ mặc định nhắm các UA gần như không có lý do hợp lệ → threshold = 1
+# (chặn ngay). Nhóm thư viện chung (curl/wget/python-requests…) có thể trùng client
+# nội bộ hợp lệ → tỉa `patterns` nếu cần. Bỏ trống `patterns` = dùng bộ mặc định.
+[badbot]
+enabled = false
+threshold = 1
+window_secs = 60
+# patterns = [        # bỏ comment để override bộ mặc định
+#     '\bsqlmap\b',
+#     '\bnikto\b',
+#     '\b(nuclei|masscan|zgrab|wpscan)\b',
+# ]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [ratelimit] — rate-abuse / DoS-lite: đếm TỔNG số request mỗi IP trong cửa sổ và
+# ban IP nào "flood" vượt ngưỡng. KHÔNG signature → đây là detector RỦI RO FALSE-
+# POSITIVE CAO NHẤT.
+#
+# CẢNH BÁO: nếu edge-guardian đọc log SAU proxy/CDN (Cloudflare, nginx LB…), mọi client
+# gộp thành một IP → ban nhầm tức thì. CHỈ bật khi log thấy IP THẬT của client
+# (cấu hình real_ip / X-Forwarded-For), và BẮT BUỘC allowlist IP proxy/CDN/monitoring
+# ở [ban].whitelist. Khuyến nghị chạy cùng dry_run trước. Mặc định TẮT.
+[ratelimit]
+enabled = false
+threshold = 300      # số request trong cửa sổ → ban (~30 req/s qua 10s = chắc chắn không phải người)
+window_secs = 10
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [health] — theo dõi SỨC KHỎE biên (không phải security): đọc MỌI dòng access log,
+# tổng hợp per-site (status mix, 5xx ratio, req/s, latency p95) và CẢNH BÁO khi site
+# degraded/down. KHÔNG ban IP. Hiện ở dashboard trang /sites + readout Overview.
+#
+# Cần log có host + status (+ request_time cho latency) → khuyến nghị nginx JSON format
+# (xem [log] phía trên + docs/10). Log combined chỉ có status → health chạy phần nào
+# (gộp mọi host vào "all", không có latency).
+[health]
+enabled = false
+# sites = ["example.com", "api.example.com"]   # rỗng = mọi host gặp trong log
+window_mins = 180        # số phút giữ trong RAM (bounded, ~<1MB cho ~10 site)
+err_ratio_pct = 5        # cảnh báo khi 5xx ratio vượt ngưỡng này
+latency_p95_ms = 2000    # cảnh báo khi p95 vượt (ms); 0 = bỏ qua latency
+sustained_mins = 5       # điều kiện phải giữ liên tục bao lâu mới báo (chống nhiễu)
+cooldown_mins = 30       # im sau khi báo, tránh spam
+
+[ban]
+# Thời gian ban (dạng nft timeout): "24h", "168h", "7d"... Dùng khi KHÔNG bật escalation.
+duration = "168h"
+
+# Ban leo thang (tùy chọn): IP tái phạm bị phạt nặng dần. Bỏ trống = ban phẳng (dùng
+# `duration`). Lần phạm thứ N dùng phần tử thứ N (0-based); vượt danh sách dùng mức
+# cuối. "permanent" = gần như vĩnh viễn.
+# escalation = ["24h", "168h", "720h", "permanent"]   # 1 ngày → 7 ngày → 30 ngày → vĩnh viễn
+# escalation_memory = "720h"   # giữ lịch sử offender 30 ngày để đếm tái phạm (mặc định)
+
+# Dải IP KHÔNG BAO GIỜ bị chặn — tránh tự bắn vào chân.
+# Thêm IP văn phòng, monitoring, healthcheck của anh vào đây.
+whitelist = [
+    "127.0.0.0/8",
+    "::1/128",
+    "10.106.49.0/24",   # WireGuard Sunteco
+    "192.168.1.0/24",   # WireGuard Viettel IDC
+]
+
+nft_table = "edge_guardian"
+nft_set_v4 = "blocklist4"
+nft_set_v6 = "blocklist6"
+
+[telegram]
+enabled = true
+bot_token = "DÁN_BOT_TOKEN_VÀO_ĐÂY"   # lấy từ @BotFather
+chat_id = "DÁN_CHAT_ID_VÀO_ĐÂY"        # ID nhóm/kênh, vd -1001234567890
+
+[email]
+# Thông báo qua email dùng Resend (https://resend.com). Có thể bật cùng Telegram —
+# thông báo sẽ gửi tới TẤT CẢ kênh đang bật.
+enabled = false
+resend_api_key = "re_..."              # API key từ Resend (bảo vệ file config, chmod 600)
+from = "edge-guardian <alerts@your-domain.com>"  # domain phải verify ở Resend
+to = ["you@example.com"]                # danh sách người nhận
+
+[geoip]
+# Tùy chọn — bỏ trống nếu không dùng. Hiển thị quốc gia/ASN/ISP của IP attacker.
+# Đọc maxminddb TRỰC TIẾP nên dùng được CẢ file sapics/ip-location-db MIỄN PHÍ (giấy
+# phép CC, KHÔNG cần tài khoản MaxMind) lẫn GeoLite2/DB-IP chuẩn.
+# Mỗi khóa nhận 1+ đường dẫn cách nhau bởi dấu phẩy (bộ City của sapics tách riêng
+# IPv4/IPv6 — trỏ cả hai để phủ đủ):
+#   city_db = "/etc/edge-guardian/dbip-city-ipv4.mmdb,/etc/edge-guardian/dbip-city-ipv6.mmdb"
+#   asn_db  = "/etc/edge-guardian/dbip-asn-ipv4.mmdb,/etc/edge-guardian/dbip-asn-ipv6.mmdb"
+city_db = ""
+asn_db = ""
+
+[sshd]
+# Phát hiện SSH brute-force từ auth.log/journald. MẶC ĐỊNH TẮT.
+# Đặt agent trên CHÍNH host có SSH (không phải node LB). Nhớ allowlist IP quản
+# trị/bastion ở [ban].whitelist để không tự khóa mình.
+enabled = false
+paths = ["/var/log/auth.log"]   # Debian/Ubuntu; RHEL dùng /var/log/secure
+threshold = 5                   # số lần đăng nhập thất bại trong cửa sổ để ban
+window_secs = 60
+
+[honeypot]
+# Bắt gói tới port mồi (nft LOG prefix) → ban NGAY (tín hiệu chất lượng cao nhất).
+# Yêu cầu: cấu hình nftables log port mồi với prefix dưới (xem setup-nftables.sh,
+# biến EG_HONEYPOT_PORTS) và route kernel log "EDGEGUARD-*" sang file rồi trỏ paths.
+enabled = false
+paths = ["/var/log/edge-guardian/netfilter.log"]
+log_prefix = "EDGEGUARD-HONEYPOT"
+
+[portscan]
+# Đếm số PORT đích DISTINCT mỗi IP (nft LOG prefix) → ban khi vượt ngưỡng.
+# Yêu cầu: setup-nftables.sh với EG_SERVICE_PORTS + EG_PORTSCAN=1, route log sang file.
+enabled = false
+paths = ["/var/log/edge-guardian/netfilter.log"]
+log_prefix = "EDGEGUARD-SCAN"
+threshold = 10        # số port khác nhau trong cửa sổ để coi là scan
+window_secs = 60
+
+[blocklist]
+# Import blocklist IP công khai (FireHOL, Spamhaus...) → nạp PROACTIVELY vào nftables
+# interval set blockset4/6, chặn nguồn xấu đã biết trước cả khi chúng chạm server.
+# Dải nằm trong ban.whitelist được tự loại trừ. Làm mới định kỳ.
+enabled = false
+sources = [
+    "https://iplists.firehol.org/files/firehol_level1.netset",
+    "https://www.spamhaus.org/drop/drop.txt",
+]
+refresh_hours = 24
+
+[state]
+# Lưu trạng thái để dedup thông báo và khôi phục nftables sau reboot.
+path = "/var/lib/edge-guardian/state.json"
+
+[control]
+# Unix control socket: cho phép `edge-guardian unban <ip>` tác động trực tiếp lên daemon
+# đang chạy (cập nhật ngay state in-memory + nftables, gỡ dứt điểm không cần restart).
+# Khi daemon không chạy, lệnh unban tự chuyển sang xử lý offline trên file state.
+enabled = true
+socket_path = "/run/edge-guardian.sock"   # quyền 0600, chỉ root
+
+[dashboard]
+# Web dashboard local (tùy chọn). MẶC ĐỊNH TẮT.
+# Khi bật: LUÔN bind localhost; truy cập từ xa qua SSH tunnel hoặc reverse proxy TLS.
+# KHÔNG BAO GIỜ bind 0.0.0.0 trực tiếp.
+enabled = false
+listen = "127.0.0.1:8787"
+username = "admin"
+# Mật khẩu lưu dạng bcrypt hash (KHÔNG plaintext). Tạo hash:
+#   htpasswd -nbBC 12 "" 'your-password' | tr -d ':\n' | sed 's/^//'
+# hoặc dùng lệnh sinh hash kèm theo (xem docs/06).
+password_hash = ""

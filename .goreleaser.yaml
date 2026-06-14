@@ -1,0 +1,122 @@
+# GoReleaser config — build binaries + .deb/.rpm + multi-arch Docker images, publish a
+# GitHub Release and push images to ghcr.io. Run by .github/workflows/release.yml on a
+# v* tag. OWNER env (lowercase GitHub owner) is set by the workflow.
+version: 2
+
+project_name: edge-guardian
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: edge-guardian
+    main: ./cmd/edge-guardian
+    binary: edge-guardian
+    env:
+      - CGO_ENABLED=0
+    goos: [linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: edge-guardian
+    formats: [tar.gz]
+    name_template: "edge-guardian_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE*
+      - config.example.toml
+      - setup-nftables.sh
+
+nfpms:
+  - id: packages
+    package_name: edge-guardian
+    formats: [deb, rpm]
+    maintainer: Giai Phap Moi Pro <son@giaiphapmoipro.vn>
+    description: |
+      Lightweight single-binary intrusion prevention daemon for Linux.
+      Detects scanners and brute-force from logs, bans source IPs at the nftables
+      firewall, and alerts in real time (Telegram/email). Includes a local dashboard.
+    vendor: Giai Phap Moi Pro
+    homepage: https://github.com/sondt/edge-guardian
+    license: Apache-2.0
+    section: net
+    bindir: /usr/bin
+    dependencies:
+      - nftables
+    contents:
+      - src: packaging/edge-guardian.service
+        dst: /lib/systemd/system/edge-guardian.service
+      - src: packaging/config.toml
+        dst: /etc/edge-guardian/config.toml
+        type: "config|noreplace"
+        file_info:
+          mode: 0600
+      - src: config.example.toml
+        dst: /usr/share/edge-guardian/config.example.toml
+      - src: setup-nftables.sh
+        dst: /usr/share/edge-guardian/setup-nftables.sh
+        file_info:
+          mode: 0755
+    scripts:
+      postinstall: packaging/scripts/postinstall.sh
+      preremove: packaging/scripts/preremove.sh
+      postremove: packaging/scripts/postremove.sh
+
+dockers:
+  - id: amd64
+    goos: linux
+    goarch: amd64
+    dockerfile: packaging/Dockerfile.goreleaser
+    use: buildx
+    image_templates:
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:latest-amd64"
+    build_flag_templates:
+      - "--platform=linux/amd64"
+    extra_files:
+      - config.example.toml
+      - setup-nftables.sh
+  - id: arm64
+    goos: linux
+    goarch: arm64
+    dockerfile: packaging/Dockerfile.goreleaser
+    use: buildx
+    image_templates:
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:{{ .Version }}-arm64"
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:latest-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+    extra_files:
+      - config.example.toml
+      - setup-nftables.sh
+
+docker_manifests:
+  - name_template: "ghcr.io/{{ .Env.OWNER }}/edge-guardian:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/{{ .Env.OWNER }}/edge-guardian:latest"
+    image_templates:
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:latest-amd64"
+      - "ghcr.io/{{ .Env.OWNER }}/edge-guardian:latest-arm64"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge "
+
+release:
+  draft: false
+  prerelease: auto
+  name_template: "edge-guardian {{ .Version }}"

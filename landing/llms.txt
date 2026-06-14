@@ -1,0 +1,32 @@
+# edge-guardian
+
+> edge-guardian is a free, open-source, single-binary intrusion prevention daemon for Linux. It detects scanners and brute-force attacks from server logs, bans the source IPs at the nftables firewall, alerts you via Telegram or email, and ships with a built-in local dashboard. One line to install.
+
+edge-guardian targets one job: the shortest possible path from "my server is being scanned" to "those IPs are blocked and I got a notification." It is a single static Go binary with no database, no agent, and no external service. It starts in dry-run mode (detect and alert without blocking) so operators can trust it before arming it.
+
+Positioning: simpler than fail2ban (single host, regex-heavy, no dashboard) and lighter than CrowdSec (agent + local API + bouncer + collections, paid dashboard). edge-guardian's free tier includes the dashboard — the main reason to choose it.
+
+## Key facts
+
+- License: Apache-2.0 (free and open source, including the dashboard)
+- Language: Go, distributed as a single static binary (cross-compiles for any Linux)
+- Requirements: Linux with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+) and root or CAP_NET_ADMIN
+- Enforcement: bans IPs in an nftables set with auto-expiring timeouts; escalating bans for repeat offenders
+- Detectors: HTTP scanner paths, SSH brute-force, port scan (distinct-port counting), honeypot ports
+- Threat intel: imports public blocklists (FireHOL, Spamhaus DROP) into an nftables interval set
+- Alerts: Telegram and email (via Resend), enriched with country/ASN from offline GeoIP
+- Dashboard: embedded local web UI (Chi + templ + HTMX) with a live "Sentinel line", ban ledger, and feed
+- Safety: CIDR allowlist and dry-run mode to avoid self-lockout
+
+## Install
+
+- One-line install (Linux, root): `curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash`
+- Packages: .deb (Debian/Ubuntu) and .rpm (RHEL/Rocky/Fedora) for amd64 and arm64, from GitHub Releases
+- Docker: `docker run -d --network host --cap-add NET_ADMIN ghcr.io/sondt/edge-guardian`
+
+## Links
+
+- Source code and releases: https://github.com/sondt/edge-guardian
+- Documentation: https://github.com/sondt/edge-guardian/blob/main/docs/README.md
+- Configuration reference: https://github.com/sondt/edge-guardian/blob/main/docs/06-cau-hinh.md
+- License: https://www.apache.org/licenses/LICENSE-2.0
