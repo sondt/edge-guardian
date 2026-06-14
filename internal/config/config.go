@@ -435,13 +435,30 @@ func (c Config) WindowDuration() time.Duration {
 func (c Config) Whitelist() ([]netip.Prefix, error) {
 	out := make([]netip.Prefix, 0, len(c.Ban.Whitelist))
 	for _, s := range c.Ban.Whitelist {
-		p, err := netip.ParsePrefix(s)
+		p, err := parsePrefixOrAddr(s)
 		if err != nil {
 			return nil, fmt.Errorf("whitelist entry %q: %w", s, err)
 		}
 		out = append(out, p)
 	}
 	return out, nil
+}
+
+// parsePrefixOrAddr accepts either CIDR notation ("10.0.0.0/8", "203.0.113.0/24") or a
+// bare single IP ("203.0.113.7", "::1"). A bare IP is treated as a single-host prefix
+// (/32 for IPv4, /128 for IPv6), so operators can allowlist one address without having
+// to remember the /32 suffix.
+func parsePrefixOrAddr(s string) (netip.Prefix, error) {
+	s = strings.TrimSpace(s)
+	if p, err := netip.ParsePrefix(s); err == nil {
+		return p, nil
+	}
+	addr, err := netip.ParseAddr(s)
+	if err != nil {
+		return netip.Prefix{}, fmt.Errorf("not a valid IP or CIDR")
+	}
+	addr = addr.Unmap()
+	return netip.PrefixFrom(addr, addr.BitLen()), nil
 }
 
 // Validate checks the configuration at the system boundary; fails fast with a clear message.

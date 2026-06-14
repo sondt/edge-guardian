@@ -119,9 +119,12 @@ duration = "168h"
 
 # Dải IP KHÔNG BAO GIỜ bị chặn — tránh tự bắn vào chân.
 # Thêm IP văn phòng, monitoring, healthcheck của anh vào đây.
+# Nhận cả CIDR ("203.0.113.0/24") LẪN IP đơn ("203.0.113.7" = /32, "::1" = /128) —
+# không cần nhớ thêm hậu tố /32.
 whitelist = [
     "127.0.0.0/8",
     "::1/128",
+    "203.0.113.7",      # một IP đơn cũng được (tự hiểu là /32)
     "10.106.49.0/24",   # WireGuard Sunteco
     "192.168.1.0/24",   # WireGuard Viettel IDC
 ]
