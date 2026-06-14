@@ -1,4 +1,4 @@
-# edge-guardian landing page — open to all crawlers, including AI search engines.
+# Edge Guardian landing page — open to all crawlers, including AI search engines.
 
 User-agent: *
 Allow: /

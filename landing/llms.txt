@@ -1,22 +1,24 @@
-# edge-guardian
+# Edge Guardian
 
-> edge-guardian is a free, open-source, single-binary intrusion prevention daemon for Linux. It detects scanners and brute-force attacks from server logs, bans the source IPs at the nftables firewall, alerts you via Telegram or email, and ships with a built-in local dashboard. One line to install.
+> Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one access-log tail it does two things: security — detect scanners, brute-force and exploit attempts and ban the source IPs at the nftables firewall — and edge health — watch each site's 5xx ratio, latency and request rate and alert when a site is degraded or down. It alerts via Telegram or email and ships with a built-in local dashboard. One line to install.
 
-edge-guardian targets one job: the shortest possible path from "my server is being scanned" to "those IPs are blocked and I got a notification." It is a single static Go binary with no database, no agent, and no external service. It starts in dry-run mode (detect and alert without blocking) so operators can trust it before arming it.
+Edge Guardian turns one log stream into two branches that run side by side: the security branch matches bad traffic and bans the source IP at the kernel via nftables; the health branch counts per-site status, latency and request rate and alerts on trouble (with sustained + cooldown so it does not spam). It is a single static Go binary with no database, no agent, and no external service. It starts in dry-run mode (detect and alert without blocking) so operators can trust it before arming it.
 
-Positioning: simpler than fail2ban (single host, regex-heavy, no dashboard) and lighter than CrowdSec (agent + local API + bouncer + collections, paid dashboard). edge-guardian's free tier includes the dashboard — the main reason to choose it.
+Positioning: simpler than fail2ban (single host, regex-heavy, no dashboard) and lighter than CrowdSec (agent + local API + bouncer + collections, paid dashboard). Beyond security, Edge Guardian also answers "is a site degraded or down?" — something neither fail2ban nor CrowdSec does. Its free tier includes the dashboard and the health monitoring. It deliberately does NOT do web analytics (no unique visitors, referrers, or top pages): it answers "is anything wrong?", not "who is viewing what?".
 
 ## Key facts
 
-- License: Apache-2.0 (free and open source, including the dashboard)
+- License: Apache-2.0 (free and open source, including the dashboard and health monitoring)
 - Language: Go, distributed as a single static binary (cross-compiles for any Linux)
 - Requirements: Linux with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+) and root or CAP_NET_ADMIN
 - Enforcement: bans IPs in an nftables set with auto-expiring timeouts; escalating bans for repeat offenders
-- Detectors: HTTP scanner paths, SSH brute-force, port scan (distinct-port counting), honeypot ports
+- Security detectors: HTTP scanner paths, SSH brute-force, exploit signatures (SQLi / path traversal / RCE probes / Log4Shell), bad-bot User-Agents (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite (per-IP request flood), port scan (distinct-port counting), honeypot ports
+- Edge health: per-site status mix, 5xx error ratio, request rate and p95 latency; alerts on degraded / down / recovered; a /sites dashboard page
 - Threat intel: imports public blocklists (FireHOL, Spamhaus DROP) into an nftables interval set
-- Alerts: Telegram and email (via Resend), enriched with country/ASN from offline GeoIP
-- Dashboard: embedded local web UI (Chi + templ + HTMX) with a live "Sentinel line", ban ledger, and feed
-- Safety: CIDR allowlist and dry-run mode to avoid self-lockout
+- Alerts: Telegram and email (via Resend) for both bans and health, enriched with country/ASN from offline GeoIP
+- Dashboard: embedded local web UI (Chi + templ + HTMX) with a live "Sentinel line", ban ledger, live feed, and a Sites health page
+- Safety: CIDR allowlist and dry-run mode to avoid self-lockout; exploit/bad-bot/rate-abuse/health are off by default
+- Logs: nginx combined format, or the recommended nginx JSON format for full per-site health (host + latency)
 
 ## Install
 
@@ -27,6 +29,7 @@ Positioning: simpler than fail2ban (single host, regex-heavy, no dashboard) and 
 ## Links
 
 - Source code and releases: https://github.com/sondt/edge-guardian
-- Documentation: https://github.com/sondt/edge-guardian/blob/main/docs/README.md
-- Configuration reference: https://github.com/sondt/edge-guardian/blob/main/docs/06-cau-hinh.md
+- Configuration reference (every key documented inline): https://github.com/sondt/edge-guardian/blob/main/config.example.toml
+- Contributing: https://github.com/sondt/edge-guardian/blob/main/CONTRIBUTING.md
+- Security policy: https://github.com/sondt/edge-guardian/blob/main/SECURITY.md
 - License: https://www.apache.org/licenses/LICENSE-2.0
