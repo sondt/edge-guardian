@@ -13,14 +13,14 @@ import (
 	"time"
 )
 
-// Telegram gửi thông báo qua Bot API bằng net/http stdlib.
+// Telegram sends notifications via the Bot API using the net/http stdlib.
 type Telegram struct {
 	token  string
 	chatID string
 	client *http.Client
 }
 
-// NewTelegram tạo notifier Telegram. apiBase rỗng => dùng endpoint mặc định.
+// NewTelegram creates a Telegram notifier. An empty apiBase => use the default endpoint.
 func NewTelegram(token, chatID string) *Telegram {
 	return &Telegram{
 		token:  token,
@@ -29,17 +29,17 @@ func NewTelegram(token, chatID string) *Telegram {
 	}
 }
 
-// Notify định dạng và gửi một message ban.
+// Notify formats and sends a ban message.
 func (t *Telegram) Notify(ctx context.Context, ev Event) error {
 	return t.send(ctx, formatMessage(ev))
 }
 
-// NotifyHealth gửi cảnh báo sức khỏe site (degraded/down/recovered).
+// NotifyHealth sends a site health alert (degraded/down/recovered).
 func (t *Telegram) NotifyHealth(ctx context.Context, ev HealthEvent) error {
 	return t.send(ctx, formatHealthMessage(ev))
 }
 
-// send là phần POST chung cho Notify/NotifyHealth.
+// send is the shared POST for Notify/NotifyHealth.
 func (t *Telegram) send(ctx context.Context, text string) error {
 	body := map[string]string{"chat_id": t.chatID, "text": text, "parse_mode": "HTML"}
 	payload, err := json.Marshal(body)
@@ -119,7 +119,7 @@ func sanitizeURLError(err error) error {
 	}
 }
 
-// escape thoát các ký tự đặc biệt của HTML parse_mode của Telegram.
+// escape escapes the special characters of Telegram's HTML parse_mode.
 func escape(s string) string {
 	r := strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
 	return r.Replace(s)

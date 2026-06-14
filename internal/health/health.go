@@ -5,16 +5,16 @@ import (
 	"time"
 )
 
-// maxSites giới hạn số host theo dõi khi không khai báo danh sách `sites` cố định —
-// chặn map phình nếu Host trong log bất thường (dù $host thường bị giới hạn bởi
-// server_name). Khi đạt trần, host mới bị bỏ qua thay vì cấp phát vô hạn.
+// maxSites caps the number of hosts tracked when no fixed `sites` list is declared —
+// preventing the map from growing if the Host in the log is anomalous (even though $host is
+// usually bounded by server_name). Once the cap is reached, new hosts are dropped instead of allocated unboundedly.
 const maxSites = 256
 
-// Health giữ rolling counters per-site. Bounded theo (số site × số phút), KHÔNG theo
-// volume request. An toàn cho truy cập đồng thời.
+// Health holds rolling per-site counters. Bounded by (number of sites × number of minutes), NOT by
+// request volume. Safe for concurrent access.
 type Health struct {
 	windowMins int
-	allow      map[string]struct{} // danh sách site cố định; rỗng = nhận mọi host
+	allow      map[string]struct{} // fixed site list; empty = accept any host
 	th         Thresholds
 	now        func() time.Time
 
@@ -22,15 +22,15 @@ type Health struct {
 	sites map[string]*SiteSeries
 }
 
-// Config khởi tạo Health.
+// Config initializes Health.
 type Config struct {
 	WindowMins int
-	Sites      []string // rỗng = theo dõi mọi host gặp trong log
+	Sites      []string // empty = track every host seen in the log
 	Thresholds Thresholds
 	Now        func() time.Time // nil = time.Now
 }
 
-// New tạo Health từ Config.
+// New creates a Health from Config.
 func New(c Config) *Health {
 	if c.WindowMins < 1 {
 		c.WindowMins = 180
@@ -55,11 +55,11 @@ func New(c Config) *Health {
 	}
 }
 
-// minuteOf trả về phút Unix của t.
+// minuteOf returns the Unix minute of t.
 func minuteOf(t time.Time) int64 { return t.Unix() / 60 }
 
-// Observe ghi một quan sát cho host tại thời điểm now. host rỗng → gộp vào "all" (log
-// combined không có $host). Site ngoài danh sách `sites` (nếu khai báo) bị bỏ qua.
+// Observe records one observation for host at time now. Empty host → folded into "all" (the
+// combined log has no $host). Sites outside the `sites` list (if declared) are skipped.
 func (h *Health) Observe(host string, status int, rtSec float64, bytes uint64, upstreamErr bool, now time.Time) {
 	if host == "" {
 		host = "all"
@@ -77,7 +77,7 @@ func (h *Health) Observe(host string, status int, rtSec float64, bytes uint64, u
 	s := h.sites[host]
 	if s == nil {
 		if h.allow == nil && len(h.sites) >= maxSites {
-			return // chặn map phình với host bất thường
+			return // prevent the map from growing with anomalous hosts
 		}
 		s = newSeries(h.windowMins)
 		h.sites[host] = s
@@ -85,8 +85,8 @@ func (h *Health) Observe(host string, status int, rtSec float64, bytes uint64, u
 	s.observe(minute, status, rtSec, bytes, upstreamErr)
 }
 
-// Snapshot chụp một site trong cửa sổ windowMins phút (clamp theo cấu hình). Trả về ok
-// false nếu site chưa từng thấy.
+// Snapshot captures one site over a window of windowMins minutes (clamped to the config). Returns ok
+// false if the site has never been seen.
 func (h *Health) Snapshot(host string, windowMins int) (SiteStats, bool) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -97,7 +97,7 @@ func (h *Health) Snapshot(host string, windowMins int) (SiteStats, bool) {
 	return h.snapshotLocked(host, s, windowMins), true
 }
 
-// SnapshotAll chụp mọi site, sắp theo host.
+// SnapshotAll captures every site, sorted by host.
 func (h *Health) SnapshotAll(windowMins int) []SiteStats {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -109,7 +109,7 @@ func (h *Health) SnapshotAll(windowMins int) []SiteStats {
 	return out
 }
 
-// snapshotLocked tổng hợp một site (caller giữ mu).
+// snapshotLocked aggregates one site (caller holds mu).
 func (h *Health) snapshotLocked(host string, s *SiteSeries, windowMins int) SiteStats {
 	if windowMins < 1 || windowMins > h.windowMins {
 		windowMins = h.windowMins
@@ -140,15 +140,15 @@ func (h *Health) snapshotLocked(host string, s *SiteSeries, windowMins int) Site
 		st.P99Sec = agg.Lat.Quantile(0.99)
 	}
 
-	// recentReqs = số request trong 2 phút gần nhất (để nhận "Down" mà không nhiễu bởi
-	// phút hiện tại còn dở).
+	// recentReqs = request count in the last 2 minutes (to detect "Down" without being skewed by
+	// the current, still-incomplete minute).
 	recent := s.aggregate(nowMinute-1, nowMinute)
 	st.classify(h.th, recent.Reqs)
 	return st
 }
 
-// Prune dọn các site không còn dữ liệu trong cửa sổ (giải phóng RAM khi một host biến
-// mất hẳn). Gọi định kỳ cùng prune detection.
+// Prune cleans up sites with no data left in the window (freeing RAM when a host disappears
+// entirely). Call it periodically alongside detection prune.
 func (h *Health) Prune() {
 	h.mu.Lock()
 	defer h.mu.Unlock()

@@ -10,12 +10,12 @@ import (
 	"time"
 )
 
-// ErrDaemonNotRunning báo không kết nối được control socket — daemon nhiều khả năng
-// không chạy, caller có thể chuyển sang đường xử lý offline.
+// ErrDaemonNotRunning signals the control socket could not be reached — the daemon
+// is most likely not running, and the caller may fall back to offline handling.
 var ErrDaemonNotRunning = errors.New("control: daemon not running (socket unavailable)")
 
-// SendUnban gửi lệnh unban tới daemon đang chạy qua socket.
-// Trả về ErrDaemonNotRunning nếu không kết nối được (để caller fallback offline).
+// SendUnban sends an unban command to the running daemon over the socket.
+// Returns ErrDaemonNotRunning if the connection fails (so the caller can fall back offline).
 func SendUnban(socketPath, ip string) error {
 	return send(socketPath, Request{Cmd: "unban", IP: ip})
 }
@@ -23,7 +23,7 @@ func SendUnban(socketPath, ip string) error {
 func send(socketPath string, req Request) error {
 	conn, err := net.DialTimeout("unix", socketPath, 3*time.Second)
 	if err != nil {
-		// Socket không tồn tại hoặc không ai lắng nghe => daemon không chạy.
+		// Socket does not exist or nobody is listening => daemon not running.
 		if errors.Is(err, os.ErrNotExist) || isConnRefused(err) {
 			return ErrDaemonNotRunning
 		}
@@ -45,9 +45,9 @@ func send(socketPath string, req Request) error {
 	return nil
 }
 
-// isConnRefused báo lỗi dial là ECONNREFUSED (socket tồn tại nhưng không ai lắng
-// nghe) — daemon không chạy. KHÔNG gộp các lỗi dial khác (vd EACCES quyền truy cập)
-// để tránh che giấu lỗi thật bằng đường offline.
+// isConnRefused reports whether the dial error is ECONNREFUSED (the socket exists but
+// nobody is listening) — daemon not running. It does NOT lump in other dial errors
+// (e.g. EACCES permission) to avoid masking a real error with the offline path.
 func isConnRefused(err error) bool {
 	return errors.Is(err, syscall.ECONNREFUSED)
 }

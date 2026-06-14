@@ -1,4 +1,4 @@
-// Package detect chứa logic phát hiện: matcher pattern URI và sliding-window.
+// Package detect holds the detection logic: URI pattern matcher and sliding-window.
 package detect
 
 import (
@@ -6,13 +6,13 @@ import (
 	"regexp"
 )
 
-// Matcher kiểm tra một URI có khớp bất kỳ pattern "xấu" nào không.
-// Các pattern được biên dịch case-insensitive.
+// Matcher checks whether a URI matches any "bad" pattern.
+// The patterns are compiled case-insensitive.
 type Matcher struct {
 	patterns []*regexp.Regexp
 }
 
-// NewMatcher biên dịch danh sách pattern (tự thêm cờ (?i)).
+// NewMatcher compiles the pattern list (auto-adding the (?i) flag).
 func NewMatcher(patterns []string) (*Matcher, error) {
 	if len(patterns) == 0 {
 		return nil, fmt.Errorf("matcher needs at least one pattern")
@@ -28,7 +28,7 @@ func NewMatcher(patterns []string) (*Matcher, error) {
 	return &Matcher{patterns: compiled}, nil
 }
 
-// IsBad trả về true nếu uri khớp ít nhất một pattern.
+// IsBad returns true if uri matches at least one pattern.
 func (m *Matcher) IsBad(uri string) bool {
 	for _, re := range m.patterns {
 		if re.MatchString(uri) {

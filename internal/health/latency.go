@@ -1,29 +1,29 @@
-// Package health theo dõi "sức khỏe biên" từ cùng access log mà detection đọc: với MỌI
-// dòng nó chỉ tăng counter tổng hợp per-site (O(1), không giữ lại request), rồi cảnh báo
-// khi site degraded/down. KHÔNG ban IP — đó là việc của nhánh detection.
+// Package health tracks "edge health" from the same access log that detection reads: for EVERY
+// line it only increments per-site aggregate counters (O(1), retaining no requests), then alerts
+// when a site is degraded/down. It does NOT ban IPs — that's the detection branch's job.
 package health
 
-// latencyBoundsSecArr là cận trên (giây) của các bucket histogram latency. Cố định để
-// ước lượng quantile mà không lưu từng mẫu. Bucket cuối (+Inf) nằm sau cận cuối cùng.
+// latencyBoundsSecArr holds the upper bounds (seconds) of the latency histogram buckets. Fixed so
+// quantiles can be estimated without storing every sample. The last bucket (+Inf) lies beyond the final bound.
 var latencyBoundsSecArr = [10]float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5}
 
-// nLatBuckets = số cận + 1 (bucket +Inf cho mẫu vượt cận cuối).
+// nLatBuckets = number of bounds + 1 (the +Inf bucket for samples exceeding the last bound).
 const nLatBuckets = len(latencyBoundsSecArr) + 1
 
-// LatencyHist là histogram latency với các bucket cận cố định. Cộng dồn được (merge khi
-// snapshot nhiều bucket phút). Giá trị, không con trỏ — copy rẻ.
+// LatencyHist is a latency histogram with fixed bucket bounds. Additive (merged when
+// snapshotting multiple minute buckets). A value, not a pointer — cheap to copy.
 type LatencyHist struct {
 	counts [nLatBuckets]uint64
 	total  uint64
 }
 
-// Observe ghi một mẫu latency (giây) vào bucket tương ứng. Mẫu < 0 bị bỏ qua (latency
-// không hợp lệ, vd log thiếu request_time = 0 vẫn tính là 0ms hợp lệ).
+// Observe records one latency sample (seconds) into the matching bucket. Samples < 0 are dropped (invalid
+// latency; e.g. a log missing request_time = 0 still counts as a valid 0ms).
 func (h *LatencyHist) Observe(sec float64) {
 	if sec < 0 {
 		return
 	}
-	idx := nLatBuckets - 1 // mặc định bucket +Inf
+	idx := nLatBuckets - 1 // default to the +Inf bucket
 	for i, b := range latencyBoundsSecArr {
 		if sec <= b {
 			idx = i
@@ -34,7 +34,7 @@ func (h *LatencyHist) Observe(sec float64) {
 	h.total++
 }
 
-// merge cộng dồn o vào h (dùng khi gộp các bucket phút trong cửa sổ snapshot).
+// merge adds o into h (used when combining minute buckets within the snapshot window).
 func (h *LatencyHist) merge(o LatencyHist) {
 	for i := range h.counts {
 		h.counts[i] += o.counts[i]
@@ -42,15 +42,15 @@ func (h *LatencyHist) merge(o LatencyHist) {
 	h.total += o.total
 }
 
-// reset đưa histogram về rỗng (tái dùng slot ring khi sang phút mới).
+// reset empties the histogram (reusing the ring slot when moving to a new minute).
 func (h *LatencyHist) reset() { *h = LatencyHist{} }
 
-// Count trả về tổng số mẫu.
+// Count returns the total number of samples.
 func (h *LatencyHist) Count() uint64 { return h.total }
 
-// Quantile ước lượng quantile q (0..1) bằng nội suy tuyến tính trong bucket chứa mốc
-// q*total. Trả về giây. Rỗng → 0. Mốc rơi vào bucket +Inf → trả cận hữu hạn cuối cùng
-// (không thể nội suy mẫu vô cực).
+// Quantile estimates quantile q (0..1) by linear interpolation within the bucket containing the
+// q*total mark. Returns seconds. Empty → 0. If the mark falls in the +Inf bucket → returns the last finite
+// bound (an infinite sample cannot be interpolated).
 func (h *LatencyHist) Quantile(q float64) float64 {
 	if h.total == 0 {
 		return 0
@@ -68,7 +68,7 @@ func (h *LatencyHist) Quantile(q float64) float64 {
 		c := float64(h.counts[i])
 		if cum+c >= target {
 			upper := latencyBoundsSecArr[i]
-			// Nội suy tuyến tính trong bucket [lower, upper] theo vị trí của target.
+			// Linear interpolation within bucket [lower, upper] based on target's position.
 			if c == 0 {
 				return upper
 			}
@@ -78,6 +78,6 @@ func (h *LatencyHist) Quantile(q float64) float64 {
 		cum += c
 		lower = latencyBoundsSecArr[i]
 	}
-	// Rơi vào bucket +Inf: trả cận hữu hạn cuối cùng làm cận dưới ước lượng.
+	// Falls in the +Inf bucket: return the last finite bound as the lower-bound estimate.
 	return latencyBoundsSecArr[len(latencyBoundsSecArr)-1]
 }

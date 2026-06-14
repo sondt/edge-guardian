@@ -2,14 +2,14 @@ package health
 
 import "sort"
 
-// Thresholds là ngưỡng dùng để phân loại trạng thái site trên dashboard (khớp với
-// ngưỡng cảnh báo trong config [health]).
+// Thresholds are the thresholds used to classify a site's status on the dashboard (matching the
+// alert thresholds in the config [health]).
 type Thresholds struct {
-	Err5xxRatio float64 // 0..1; vượt = degraded
-	P95Sec      float64 // giây; 0 = không xét latency
+	Err5xxRatio float64 // 0..1; exceeding = degraded
+	P95Sec      float64 // seconds; 0 = don't consider latency
 }
 
-// SiteStats là ảnh chụp sức khỏe một site trong cửa sổ — read model cho dashboard + alert.
+// SiteStats is a snapshot of one site's health over the window — the read model for dashboard + alert.
 type SiteStats struct {
 	Host       string
 	WindowMins int
@@ -31,15 +31,15 @@ type SiteStats struct {
 
 	UpstreamErr uint64
 
-	Spark  []int  // số request mỗi phút (cũ → mới)
+	Spark  []int  // requests per minute (old → new)
 	Status string // "Healthy" | "Degraded" | "Down" | "Idle"
 }
 
-// classify đặt trường Status theo ngưỡng và lưu lượng gần đây.
-//   - Idle  : không có request nào trong cửa sổ (site yên, không báo động).
-//   - Down  : có lưu lượng trong cửa sổ nhưng ~0 trong 2 phút gần nhất (rớt về 0).
-//   - Degraded: vượt ngưỡng 5xx hoặc p95.
-//   - Healthy: còn lại.
+// classify sets the Status field based on thresholds and recent traffic.
+//   - Idle  : no requests in the window (site quiet, no alarm).
+//   - Down  : traffic in the window but ~0 in the last 2 minutes (dropped to 0).
+//   - Degraded: exceeds the 5xx or p95 threshold.
+//   - Healthy: everything else.
 func (s *SiteStats) classify(th Thresholds, recentReqs uint64) {
 	switch {
 	case s.Reqs == 0:
@@ -55,7 +55,7 @@ func (s *SiteStats) classify(th Thresholds, recentReqs uint64) {
 	}
 }
 
-// byHost sắp xếp danh sách SiteStats theo host (ổn định cho dashboard).
+// byHost sorts a list of SiteStats by host (stable for the dashboard).
 func byHost(stats []SiteStats) {
 	sort.Slice(stats, func(i, j int) bool { return stats[i].Host < stats[j].Host })
 }

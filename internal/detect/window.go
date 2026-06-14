@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// Window đếm số lần khớp theo từng khóa (IP) trong một cửa sổ trượt.
-// An toàn cho truy cập đồng thời.
+// Window counts matches per key (IP) within a sliding window.
+// Safe for concurrent access.
 type Window struct {
 	threshold int
 	window    time.Duration
@@ -15,7 +15,7 @@ type Window struct {
 	hits map[string][]time.Time
 }
 
-// NewWindow tạo cửa sổ trượt với ngưỡng và độ rộng cho trước.
+// NewWindow creates a sliding window with the given threshold and width.
 func NewWindow(threshold int, window time.Duration) *Window {
 	if threshold < 1 {
 		threshold = 1
@@ -27,8 +27,8 @@ func NewWindow(threshold int, window time.Duration) *Window {
 	}
 }
 
-// Record ghi một lần khớp cho key tại thời điểm now, dọn các mốc cũ hơn cửa sổ,
-// và trả về (số lần còn trong cửa sổ, đã đạt ngưỡng chưa).
+// Record records a match for key at now, prunes timestamps older than the window,
+// and returns (count still in the window, whether the threshold is reached).
 func (w *Window) Record(key string, now time.Time) (count int, tripped bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -47,15 +47,15 @@ func (w *Window) Record(key string, now time.Time) (count int, tripped bool) {
 	return len(kept), len(kept) >= w.threshold
 }
 
-// Forget xóa lịch sử của một key (gọi sau khi đã ban để giải phóng bộ nhớ).
+// Forget clears a key's history (called after a ban to free memory).
 func (w *Window) Forget(key string) {
 	w.mu.Lock()
 	delete(w.hits, key)
 	w.mu.Unlock()
 }
 
-// Prune dọn toàn bộ key không còn mốc nào trong cửa sổ tính tới now.
-// Gọi định kỳ để tránh map phình theo thời gian.
+// Prune removes every key with no timestamps left in the window as of now.
+// Call periodically to keep the map from growing over time.
 func (w *Window) Prune(now time.Time) {
 	w.mu.Lock()
 	defer w.mu.Unlock()

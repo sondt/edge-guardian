@@ -15,7 +15,7 @@ import (
 	"github.com/google/nftables"
 )
 
-// nftEnforcer thao tác nftables qua netlink (không exec lệnh `nft`).
+// nftEnforcer operates on nftables via netlink (without exec'ing the `nft` command).
 type nftEnforcer struct {
 	cfg Config
 
@@ -106,10 +106,10 @@ func (e *nftEnforcer) Unban(ip netip.Addr) error {
 	return nil
 }
 
-// ReplaceBlockset nạp lại toàn bộ interval set blockset4/blockset6 bằng `nft -f -`.
-// Đây là CỐ TÌNH dùng exec (không netlink): nạp hàng nghìn CIDR vào interval set là
-// thao tác BULK định kỳ (không phải hot-path ban từng IP), và `nft -f` xử lý interval
-// set tin cậy hơn nhiều so với tự dựng phần tử interval qua netlink.
+// ReplaceBlockset reloads the entire blockset4/blockset6 interval sets via `nft -f -`.
+// This DELIBERATELY uses exec (not netlink): loading thousands of CIDRs into an interval
+// set is a periodic BULK operation (not the per-IP ban hot path), and `nft -f` handles
+// interval sets far more reliably than hand-building interval elements over netlink.
 func (e *nftEnforcer) ReplaceBlockset(v4, v6 []netip.Prefix) error {
 	var b strings.Builder
 	writeSet := func(name string, prefixes []netip.Prefix) {

@@ -5,14 +5,14 @@ import (
 	"errors"
 )
 
-// multi gửi mỗi sự kiện tới NHIỀU kênh. Một kênh lỗi không chặn các kênh khác —
-// lỗi được gộp lại (errors.Join) để caller log.
+// multi sends each event to MULTIPLE channels. One failing channel does not block the
+// others — errors are joined (errors.Join) for the caller to log.
 type multi struct {
 	notifiers []Notifier
 }
 
-// Multi gộp nhiều Notifier thành một. Không có kênh nào → Noop; đúng một kênh → trả
-// thẳng kênh đó (khỏi bọc thừa).
+// Multi combines several Notifiers into one. No channels → Noop; exactly one channel → return
+// that channel directly (avoid needless wrapping).
 func Multi(notifiers ...Notifier) Notifier {
 	switch len(notifiers) {
 	case 0:
@@ -24,7 +24,7 @@ func Multi(notifiers ...Notifier) Notifier {
 	}
 }
 
-// Notify gửi tới mọi kênh, gộp lỗi (không fail-fast).
+// Notify sends to every channel, joining errors (no fail-fast).
 func (m multi) Notify(ctx context.Context, ev Event) error {
 	var errs []error
 	for _, n := range m.notifiers {
@@ -35,7 +35,7 @@ func (m multi) Notify(ctx context.Context, ev Event) error {
 	return errors.Join(errs...)
 }
 
-// NotifyHealth fan-out cảnh báo sức khỏe tới mọi kênh, gộp lỗi.
+// NotifyHealth fans out the health alert to every channel, joining errors.
 func (m multi) NotifyHealth(ctx context.Context, ev HealthEvent) error {
 	var errs []error
 	for _, n := range m.notifiers {

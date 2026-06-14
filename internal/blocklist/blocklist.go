@@ -1,6 +1,6 @@
-// Package blocklist tải và phân tích các blocklist IP công khai (FireHOL, Spamhaus
-// DROP...) thành danh sách prefix, để nạp PROACTIVELY vào nftables — chặn nguồn xấu
-// đã biết trước cả khi chúng chạm tới server.
+// Package blocklist fetches and parses public IP blocklists (FireHOL, Spamhaus
+// DROP, ...) into prefix lists, to be loaded PROACTIVELY into nftables — blocking
+// known-bad sources before they ever reach the server.
 package blocklist
 
 import (
@@ -14,26 +14,26 @@ import (
 	"strings"
 )
 
-// Set là kết quả gộp nhiều blocklist, đã tách theo họ địa chỉ và loại trùng.
+// Set is the merged result of several blocklists, split by address family and deduplicated.
 type Set struct {
 	V4 []netip.Prefix
 	V6 []netip.Prefix
 }
 
-// Len trả tổng số prefix.
+// Len returns the total number of prefixes.
 func (s Set) Len() int { return len(s.V4) + len(s.V6) }
 
-// parseLine trích một prefix từ một dòng blocklist. Hỗ trợ:
-//   - FireHOL netset: "1.2.3.0/24" hoặc "1.2.3.4" mỗi dòng, comment "#".
-//   - Spamhaus DROP: "1.2.3.0/24 ; SBL123" (CIDR rồi "; mô tả").
+// parseLine extracts a prefix from a single blocklist line. It supports:
+//   - FireHOL netset: "1.2.3.0/24" or "1.2.3.4" per line, "#" comments.
+//   - Spamhaus DROP: "1.2.3.0/24 ; SBL123" (CIDR then "; description").
 //
-// Dòng rỗng/comment ("#" hoặc ";") → bỏ. IP trần → /32 (v4) hoặc /128 (v6).
+// Empty/comment lines ("#" or ";") → skipped. A bare IP → /32 (v4) or /128 (v6).
 func parseLine(line string) (netip.Prefix, bool) {
 	line = strings.TrimSpace(line)
 	if line == "" || line[0] == '#' || line[0] == ';' {
 		return netip.Prefix{}, false
 	}
-	// Lấy token đầu (trước khoảng trắng hoặc ";").
+	// Take the first token (before whitespace or ";").
 	tok := line
 	if i := strings.IndexAny(tok, " \t;"); i >= 0 {
 		tok = tok[:i]
@@ -48,7 +48,7 @@ func parseLine(line string) (netip.Prefix, bool) {
 	return netip.Prefix{}, false
 }
 
-// Parse đọc một blocklist (text) thành danh sách prefix.
+// Parse reads a blocklist (text) into a list of prefixes.
 func Parse(r io.Reader) []netip.Prefix {
 	var out []netip.Prefix
 	sc := bufio.NewScanner(r)
@@ -61,7 +61,7 @@ func Parse(r io.Reader) []netip.Prefix {
 	return out
 }
 
-// Fetch tải một URL và phân tích thành prefix.
+// Fetch downloads a URL and parses it into prefixes.
 func Fetch(ctx context.Context, client *http.Client, url string) ([]netip.Prefix, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -75,18 +75,18 @@ func Fetch(ctx context.Context, client *http.Client, url string) ([]netip.Prefix
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("fetch %q: status %d", url, resp.StatusCode)
 	}
-	// Giới hạn 32MB phòng nguồn độc/hỏng.
+	// Limit to 32MB to guard against a malicious/corrupt source.
 	return Parse(io.LimitReader(resp.Body, 32<<20)), nil
 }
 
-// excluder cho biết một prefix có nằm trong allowlist không (để KHÔNG chặn).
+// excluder reports whether a prefix is in the allowlist (so it is NOT blocked).
 type excluder interface {
 	Contains(netip.Addr) bool
 }
 
-// FetchAll tải tất cả nguồn, gộp, loại trùng, loại bỏ prefix có địa chỉ mạng nằm
-// trong allowlist, rồi tách v4/v6. Một nguồn lỗi được bỏ qua (trả kèm danh sách lỗi)
-// để các nguồn khác vẫn dùng được.
+// FetchAll downloads all sources, merges them, deduplicates, drops prefixes whose network
+// address is in the allowlist, then splits into v4/v6. A failing source is skipped (its
+// error is returned in the error list) so the other sources remain usable.
 func FetchAll(ctx context.Context, client *http.Client, urls []string, allow excluder) (Set, []error) {
 	seen := make(map[netip.Prefix]struct{})
 	var set Set
@@ -103,7 +103,7 @@ func FetchAll(ctx context.Context, client *http.Client, urls []string, allow exc
 				continue
 			}
 			if allow != nil && allow.Contains(p.Addr()) {
-				continue // đừng chặn dải đã allowlist
+				continue // don't block an allowlisted range
 			}
 			seen[p] = struct{}{}
 			if p.Addr().Is4() {

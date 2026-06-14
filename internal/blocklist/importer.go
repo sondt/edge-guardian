@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-// Applier nạp tập prefix blocklist vào tầng thực thi (nftables interval set).
-// *enforce.Enforcer thoả mãn interface này.
+// Applier loads the blocklist prefix set into the enforcement layer (nftables interval set).
+// *enforce.Enforcer satisfies this interface.
 type Applier interface {
 	ReplaceBlockset(v4, v6 []netip.Prefix) error
 }
 
-// Importer tải các blocklist công khai định kỳ và nạp vào nftables. Triển khai
-// app.Service (Start/Name).
+// Importer periodically downloads public blocklists and loads them into nftables. It
+// implements app.Service (Start/Name).
 type Importer struct {
 	urls     []string
 	allow    excluder
@@ -25,7 +25,7 @@ type Importer struct {
 	log      *slog.Logger
 }
 
-// NewImporter tạo importer. interval <= 0 → mặc định 24h.
+// NewImporter creates an importer. interval <= 0 → defaults to 24h.
 func NewImporter(urls []string, allow excluder, applier Applier, interval time.Duration, log *slog.Logger) *Importer {
 	if interval <= 0 {
 		interval = 24 * time.Hour
@@ -43,11 +43,11 @@ func NewImporter(urls []string, allow excluder, applier Applier, interval time.D
 	}
 }
 
-// Name định danh service.
+// Name identifies the service.
 func (i *Importer) Name() string { return "blocklist-import" }
 
-// Start nạp ngay một lần rồi làm mới theo chu kỳ cho tới khi ctx hủy. Best-effort:
-// nguồn lỗi / apply lỗi chỉ log, không dừng daemon.
+// Start loads once immediately, then refreshes periodically until ctx is canceled.
+// Best-effort: a source error / apply error is only logged and does not stop the daemon.
 func (i *Importer) Start(ctx context.Context) error {
 	i.refresh(ctx)
 

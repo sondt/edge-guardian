@@ -5,29 +5,29 @@ import (
 	"regexp"
 )
 
-// sshFailedRe khớp phần đầu của dòng sshd báo đăng nhập thất bại (auth.log/journald):
+// sshFailedRe matches the start of an sshd failed-login line (auth.log/journald):
 //
 //	Failed password for root from 1.2.3.4 port 54321 ssh2
 //	Failed password for invalid user admin from 1.2.3.4 port 54321 ssh2
 //
-// Group 1 = tiền tố "invalid user " (tùy chọn), group 2 = username.
+// Group 1 = optional "invalid user " prefix, group 2 = username.
 var sshFailedRe = regexp.MustCompile(`Failed password for (invalid user )?(\S+) `)
 
-// sshFromPortRe khớp mọi cụm "from <ip> port <n>" trên dòng.
+// sshFromPortRe matches every "from <ip> port <n>" segment on the line.
 var sshFromPortRe = regexp.MustCompile(`from (\S+) port \d+`)
 
-// SSHParser trích IP + lý do từ dòng log sshd.
+// SSHParser extracts IP + reason from an sshd log line.
 type SSHParser struct{}
 
-// NewSSHParser tạo parser sshd (không cấu hình — pattern cố định, ổn định).
+// NewSSHParser creates an sshd parser (no configuration — the pattern is fixed and stable).
 func NewSSHParser() *SSHParser { return &SSHParser{} }
 
-// Parse trả về (ip, reason, true) nếu dòng là một lần đăng nhập SSH thất bại.
+// Parse returns (ip, reason, true) if the line is a failed SSH login.
 //
-// Chống log-injection: username do client điều khiển; một kẻ tấn công có thể đặt
-// username chứa "from <ip-nạn-nhân> port 22" để đổ vạ. sshd luôn nối cụm
-// "from <ip-thật> port <n>" của chính nó vào CUỐI dòng, nên ta lấy cụm "from ... port"
-// CUỐI CÙNG làm IP nguồn — không thể bị spoof bằng username.
+// Log-injection defense: the username is client-controlled; an attacker could set a
+// username containing "from <victim-ip> port 22" to frame someone. sshd always appends its own
+// "from <real-ip> port <n>" segment at the END of the line, so we take the LAST "from ... port"
+// segment as the source IP — it cannot be spoofed via the username.
 func (p *SSHParser) Parse(line string) (ip, reason string, ok bool) {
 	m := sshFailedRe.FindStringSubmatch(line)
 	if m == nil {
@@ -37,7 +37,7 @@ func (p *SSHParser) Parse(line string) (ip, reason string, ok bool) {
 	if len(froms) == 0 {
 		return "", "", false
 	}
-	ip = froms[len(froms)-1][1] // cụm "from ... port" cuối cùng = peer thật của sshd
+	ip = froms[len(froms)-1][1] // last "from ... port" segment = sshd's real peer
 	if ip == "" {
 		return "", "", false
 	}

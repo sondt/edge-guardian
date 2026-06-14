@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-// stubEnforcer cho phép build/test trên OS không phải Linux (vd macOS dev).
-// Mọi thao tác ban thật trả về lỗi rõ ràng — chỉ Linux + nftables mới enforce được.
+// stubEnforcer allows building/testing on non-Linux OSes (e.g. macOS dev).
+// Every real ban operation returns a clear error — only Linux + nftables can enforce.
 type stubEnforcer struct{}
 
 func newPlatform(Config) (Enforcer, error) {

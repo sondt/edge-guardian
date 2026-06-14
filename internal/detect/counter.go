@@ -5,19 +5,19 @@ import (
 	"time"
 )
 
-// Counter đếm "tín hiệu" theo từng khóa (IP) trong cửa sổ trượt và báo khi vượt ngưỡng.
-// Tham số sub là khóa con tùy chọn: bộ đếm distinct (port scan) đếm số sub KHÁC NHAU,
-// còn bộ đếm hit thường bỏ qua sub.
+// Counter counts "signals" per key (IP) within a sliding window and reports when the threshold
+// is exceeded. The sub parameter is an optional sub-key: the distinct counter (port scan) counts
+// DIFFERENT subs, while the plain hit counter ignores sub.
 type Counter interface {
 	Record(key, sub string, now time.Time) (count int, tripped bool)
 	Forget(key string)
 	Prune(now time.Time)
 }
 
-// hits là Counter dựa trên Window (đếm số lần ghi), bỏ qua sub. Dùng cho HTTP/SSH/honeypot.
+// hits is a Window-based Counter (counts records), ignoring sub. Used for HTTP/SSH/honeypot.
 type hits struct{ w *Window }
 
-// Hits tạo Counter đếm số sự kiện trong cửa sổ (ngưỡng theo số hit).
+// Hits creates a Counter that counts events within the window (threshold by hit count).
 func Hits(threshold int, window time.Duration) Counter {
 	return &hits{w: NewWindow(threshold, window)}
 }
@@ -26,18 +26,19 @@ func (h *hits) Record(key, _ string, now time.Time) (int, bool) { return h.w.Rec
 func (h *hits) Forget(key string)                               { h.w.Forget(key) }
 func (h *hits) Prune(now time.Time)                             { h.w.Prune(now) }
 
-// Distinct là Counter đếm số sub KHÁC NHAU của một key trong cửa sổ — dùng cho port
-// scan (đếm số PORT đích distinct mà một IP chạm tới, không phải tổng số gói). Gõ nhầm
-// một port nhiều lần không làm tăng đếm; chạm nhiều port khác nhau mới tính là scan.
+// Distinct is a Counter that counts the number of DIFFERENT subs of a key within the window —
+// used for port scan (counts distinct destination PORTs an IP touches, not the total packet
+// count). Hitting one port many times does not increase the count; touching many different ports
+// is what counts as a scan.
 type Distinct struct {
 	threshold int
 	window    time.Duration
 
 	mu   sync.Mutex
-	seen map[string]map[string]time.Time // key -> (sub -> lần chạm gần nhất)
+	seen map[string]map[string]time.Time // key -> (sub -> last touch)
 }
 
-// NewDistinct tạo bộ đếm distinct với ngưỡng số sub và độ rộng cửa sổ.
+// NewDistinct creates a distinct counter with a sub-count threshold and window width.
 func NewDistinct(threshold int, window time.Duration) *Distinct {
 	if threshold < 1 {
 		threshold = 1
@@ -45,8 +46,8 @@ func NewDistinct(threshold int, window time.Duration) *Distinct {
 	return &Distinct{threshold: threshold, window: window, seen: make(map[string]map[string]time.Time)}
 }
 
-// Record ghi nhận key chạm sub tại now, dọn sub cũ hơn cửa sổ, trả về (số sub distinct
-// còn trong cửa sổ, đã đạt ngưỡng chưa).
+// Record records key touching sub at now, prunes subs older than the window, and returns
+// (number of distinct subs still in the window, whether the threshold is reached).
 func (d *Distinct) Record(key, sub string, now time.Time) (int, bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -70,14 +71,14 @@ func (d *Distinct) Record(key, sub string, now time.Time) (int, bool) {
 	return count, count >= d.threshold
 }
 
-// Forget xóa lịch sử của một key (gọi sau khi đã ban).
+// Forget clears a key's history (called after a ban).
 func (d *Distinct) Forget(key string) {
 	d.mu.Lock()
 	delete(d.seen, key)
 	d.mu.Unlock()
 }
 
-// Prune dọn các key không còn sub nào trong cửa sổ tính tới now.
+// Prune removes keys with no subs left in the window as of now.
 func (d *Distinct) Prune(now time.Time) {
 	d.mu.Lock()
 	defer d.mu.Unlock()

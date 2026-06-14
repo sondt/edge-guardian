@@ -22,15 +22,15 @@ import (
 // eventRetention is how long the dashboard keeps detection events in RAM.
 const eventRetention = 24 * time.Hour
 
-// Components là các thành phần đã khởi tạo từ config, kèm hàm dọn dẹp.
+// Components are the components initialized from config, plus a cleanup function.
 type Components struct {
 	App      *App
 	Services []Service
 	Cleanup  func()
 }
 
-// Build khởi tạo mọi thành phần từ config. Caller chịu trách nhiệm gọi Cleanup.
-// now lấy mặc định time.Now bên trong New.
+// Build initializes all components from config. The caller is responsible for calling Cleanup.
+// now defaults to time.Now inside New.
 func Build(cfg config.Config, logger *slog.Logger) (*Components, error) {
 	detectors, paths, err := buildDetectors(cfg)
 	if err != nil {

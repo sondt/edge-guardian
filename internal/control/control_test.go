@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// fakeUnbanner ghi lại các IP được yêu cầu unban.
+// fakeUnbanner records the IPs requested for unban.
 type fakeUnbanner struct {
 	mu      sync.Mutex
 	ips     []string

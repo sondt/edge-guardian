@@ -17,20 +17,20 @@ import (
 // request is tiny; this caps memory against a hostile local writer.
 const maxRequestBytes = 4096
 
-// Unbanner là hành động daemon thực hiện khi nhận lệnh unban.
+// Unbanner is the action the daemon performs when it receives an unban command.
 type Unbanner interface {
 	UnbanLive(ctx context.Context, ip string) error
 }
 
-// Server lắng nghe trên một unix socket và phục vụ các Request.
-// Triển khai app.Service (Start/Name).
+// Server listens on a unix socket and serves Requests.
+// It implements app.Service (Start/Name).
 type Server struct {
 	path string
 	unb  Unbanner
 	log  *slog.Logger
 }
 
-// NewServer tạo control server gắn với hành động unban của daemon.
+// NewServer creates a control server bound to the daemon's unban action.
 func NewServer(path string, unb Unbanner, log *slog.Logger) *Server {
 	if log == nil {
 		log = slog.Default()
@@ -38,35 +38,36 @@ func NewServer(path string, unb Unbanner, log *slog.Logger) *Server {
 	return &Server{path: path, unb: unb, log: log}
 }
 
-// Name định danh service trong log.
+// Name identifies the service in logs.
 func (s *Server) Name() string { return "control-socket" }
 
-// Start lắng nghe cho tới khi ctx hủy. Xóa socket cũ (nếu có), tạo mới với quyền
-// 0600, accept và xử lý từng kết nối. Khi ctx hủy, đóng listener và dọn socket.
+// Start listens until ctx is canceled. It removes any old socket, creates a new one with
+// mode 0600, and accepts and handles each connection. When ctx is canceled, it closes the
+// listener and cleans up the socket.
 func (s *Server) Start(ctx context.Context) error {
-	// Dọn socket mồ côi từ lần chạy trước (crash không kịp xóa).
+	// Clean up an orphaned socket from a previous run (a crash left it behind).
 	if err := os.Remove(s.path); err != nil && !errors.Is(err, os.ErrNotExist) {
 		s.log.Warn("control: could not remove stale socket", "path", s.path, "err", err)
 	}
 
-	// Tạo socket với quyền 0600 NGAY từ đầu bằng umask, tránh khe TOCTOU giữa
-	// listen và chmod (umask 0177 => file mode 0600).
+	// Create the socket with mode 0600 right from the start via umask, avoiding a TOCTOU
+	// window between listen and chmod (umask 0177 => file mode 0600).
 	oldMask := syscall.Umask(0o177)
 	ln, err := net.Listen("unix", s.path)
 	syscall.Umask(oldMask)
 	if err != nil {
 		return fmt.Errorf("control: listen on %q: %w", s.path, err)
 	}
-	// Defense-in-depth: đảm bảo quyền 0600 kể cả khi umask không tác dụng như mong đợi.
+	// Defense-in-depth: ensure mode 0600 even if umask did not take effect as expected.
 	if err := os.Chmod(s.path, 0o600); err != nil {
 		_ = ln.Close()
 		return fmt.Errorf("control: chmod socket %q: %w", s.path, err)
 	}
-	// Dọn socket khi thoát (UnixListener.Close cũng unlink, đây là belt-and-suspenders).
+	// Clean up the socket on exit (UnixListener.Close also unlinks; this is belt-and-suspenders).
 	defer os.Remove(s.path)
 	s.log.Info("control socket listening", "path", s.path)
 
-	// Đóng listener khi ctx hủy để bung Accept.
+	// Close the listener when ctx is canceled to unblock Accept.
 	go func() {
 		<-ctx.Done()
 		_ = ln.Close()
@@ -76,7 +77,7 @@ func (s *Server) Start(ctx context.Context) error {
 		conn, err := ln.Accept()
 		if err != nil {
 			if ctx.Err() != nil {
-				return nil // shutdown bình thường
+				return nil // normal shutdown
 			}
 			s.log.Error("control: accept failed", "err", err)
 			continue

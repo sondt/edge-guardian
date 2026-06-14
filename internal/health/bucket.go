@@ -1,21 +1,21 @@
 package health
 
-// Bucket là tổng hợp 1 phút cho một site. Chỉ counter — không giữ request.
+// Bucket is a 1-minute aggregate for a site. Counters only — it does not retain requests.
 type Bucket struct {
-	minute      int64 // phút Unix bucket này đại diện; -1 = slot rỗng/chưa dùng
+	minute      int64 // Unix minute this bucket represents; -1 = empty/unused slot
 	Reqs        uint64
-	Status      [6]uint64 // đánh chỉ số theo class = status/100: [1]=1xx … [5]=5xx; [0] không dùng
+	Status      [6]uint64 // indexed by class = status/100: [1]=1xx … [5]=5xx; [0] unused
 	Bytes       uint64
 	UpstreamErr uint64 // 502/503/504
 	Lat         LatencyHist
 }
 
-// reset đưa bucket về rỗng và gắn cho phút mới (tái dùng slot ring).
+// reset empties the bucket and assigns it to a new minute (reusing the ring slot).
 func (b *Bucket) reset(minute int64) {
 	*b = Bucket{minute: minute}
 }
 
-// observe cộng một quan sát vào bucket.
+// observe adds one observation to the bucket.
 func (b *Bucket) observe(status int, rtSec float64, bytes uint64, upstreamErr bool) {
 	b.Reqs++
 	if class := status / 100; class >= 1 && class <= 5 {
@@ -30,13 +30,13 @@ func (b *Bucket) observe(status int, rtSec float64, bytes uint64, upstreamErr bo
 	}
 }
 
-// SiteSeries là ring buffer các bucket phút cho một site. Slot đánh chỉ số theo
-// (minute mod len); mỗi slot mang phút của nó để nhận biết slot cũ (gap) và tự reset.
+// SiteSeries is a ring buffer of minute buckets for a site. Slots are indexed by
+// (minute mod len); each slot carries its own minute so stale slots (gaps) can be detected and self-reset.
 type SiteSeries struct {
 	buckets []Bucket
 }
 
-// newSeries tạo series với n slot phút (n = số phút giữ trong RAM).
+// newSeries creates a series with n minute slots (n = number of minutes kept in RAM).
 func newSeries(n int) *SiteSeries {
 	if n < 1 {
 		n = 1
@@ -48,8 +48,8 @@ func newSeries(n int) *SiteSeries {
 	return &SiteSeries{buckets: bs}
 }
 
-// bucketFor trả về con trỏ bucket cho phút minute, reset nếu slot đang giữ phút khác
-// (slot cũ bị ghi đè — đó chính là cách ring "quên" dữ liệu ngoài cửa sổ).
+// bucketFor returns the bucket pointer for minute, resetting it if the slot holds a different minute
+// (the old slot is overwritten — this is how the ring "forgets" data outside the window).
 func (s *SiteSeries) bucketFor(minute int64) *Bucket {
 	b := &s.buckets[((minute%int64(len(s.buckets)))+int64(len(s.buckets)))%int64(len(s.buckets))]
 	if b.minute != minute {
@@ -58,13 +58,13 @@ func (s *SiteSeries) bucketFor(minute int64) *Bucket {
 	return b
 }
 
-// observe ghi một quan sát vào bucket của phút minute.
+// observe records one observation into the bucket for the given minute.
 func (s *SiteSeries) observe(minute int64, status int, rtSec float64, bytes uint64, upstreamErr bool) {
 	s.bucketFor(minute).observe(status, rtSec, bytes, upstreamErr)
 }
 
-// aggregate gộp các bucket có phút trong [fromMinute, nowMinute] thành một Bucket tổng.
-// Slot ngoài khoảng (gồm slot rỗng minute=-1 và slot mang phút cũ đã bị vòng) bị bỏ qua.
+// aggregate merges buckets whose minute is in [fromMinute, nowMinute] into one combined Bucket.
+// Slots outside the range (including empty slots minute=-1 and slots holding a wrapped-over old minute) are skipped.
 func (s *SiteSeries) aggregate(fromMinute, nowMinute int64) Bucket {
 	var agg Bucket
 	for i := range s.buckets {
@@ -83,8 +83,8 @@ func (s *SiteSeries) aggregate(fromMinute, nowMinute int64) Bucket {
 	return agg
 }
 
-// perMinuteReqs trả về số request mỗi phút trong [fromMinute, nowMinute], theo thứ tự
-// thời gian tăng dần (cho sparkline). Phút không có dữ liệu = 0.
+// perMinuteReqs returns the request count per minute in [fromMinute, nowMinute], in ascending
+// time order (for the sparkline). Minutes with no data = 0.
 func (s *SiteSeries) perMinuteReqs(fromMinute, nowMinute int64) []int {
 	n := int(nowMinute - fromMinute + 1)
 	if n < 1 {

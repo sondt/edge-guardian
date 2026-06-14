@@ -1,4 +1,4 @@
-// Package app lắp ráp các thành phần và chạy vòng lặp daemon.
+// Package app assembles the components and runs the daemon loop.
 package app
 
 import (
@@ -17,72 +17,72 @@ import (
 	"github.com/sondt/edge-guardian/internal/state"
 )
 
-// Deps gom mọi phụ thuộc của App; cho phép inject fake khi test.
+// Deps gathers all of App's dependencies; allows injecting fakes in tests.
 type Deps struct {
-	Detectors []*Detector // các nguồn phát hiện (http, sshd, ...)
-	Paths     []string    // hợp các file log cần tail (cho tailer)
+	Detectors []*Detector // detection sources (http, sshd, ...)
+	Paths     []string    // union of log files to tail (for the tailer)
 	Allow     *allow.List
 	State     *state.Store
 	Enforcer  enforce.Enforcer
 	Notifier  notify.Notifier
 	GeoIP     GeoIP
 
-	BanDuration time.Duration // ban phẳng (khi escalation rỗng)
+	BanDuration time.Duration // flat ban (when escalation is empty)
 
-	// Escalation: thời gian ban leo thang theo số lần tái phạm (rỗng = ban phẳng).
-	// EscalationMemory: giữ lịch sử offender bao lâu sau khi ban hết hạn (để đếm tái phạm).
+	// Escalation: ban duration that escalates with the number of repeat offenses (empty = flat ban).
+	// EscalationMemory: how long to keep offender history after a ban expires (to count repeats).
 	Escalation       []time.Duration
 	EscalationMemory time.Duration
 
 	DryRun bool
 	Logger *slog.Logger
 
-	// Events nhận sự kiện phát hiện (cho dashboard); nil => bỏ qua.
+	// Events receives detection events (for the dashboard); nil => ignored.
 	Events EventSink
 
-	// Nhánh health (tùy chọn). Health == nil => tắt hoàn toàn. Đọc MỌI dòng log để
-	// tổng hợp counter per-site và cảnh báo trạng thái — KHÔNG ban IP.
+	// Health branch (optional). Health == nil => fully disabled. Reads EVERY log line to
+	// aggregate per-site counters and alert on status — does NOT ban IPs.
 	Health            *health.Health
-	HealthAlerter     *health.Alerter   // nil => không gửi cảnh báo
-	HealthParser      *parse.LineParser // parse host/status/latency cho health
-	HealthWindow      int               // cửa sổ (phút) cho snapshot dashboard
-	HealthAlertWindow int               // cửa sổ (phút) cho đánh giá cảnh báo
+	HealthAlerter     *health.Alerter   // nil => do not send alerts
+	HealthParser      *parse.LineParser // parses host/status/latency for health
+	HealthWindow      int               // window (minutes) for the dashboard snapshot
+	HealthAlertWindow int               // window (minutes) for alert evaluation
 
-	// Now cho phép kiểm soát thời gian trong test; nil => time.Now.
+	// Now allows controlling time in tests; nil => time.Now.
 	Now func() time.Time
 }
 
-// GeoIP giải IP nguồn → vị trí/mạng. *geoip.Resolver và geoip.Nop thoả mãn.
+// GeoIP resolves a source IP → location/network. *geoip.Resolver and geoip.Nop satisfy it.
 type GeoIP interface {
 	Lookup(ip string) geoip.Result
 }
 
-// EventSink nhận mỗi sự kiện ban/would-ban để hiển thị realtime (dashboard).
-// Tách interface để hot-path không phụ thuộc cứng vào package web.
+// EventSink receives each ban/would-ban event for realtime display (dashboard).
+// Split into an interface so the hot path does not depend hard on the web package.
 type EventSink interface {
 	Push(at time.Time, ip, detector, action, country, asn string)
 }
 
-// noopSink bỏ qua mọi sự kiện.
+// noopSink ignores all events.
 type noopSink struct{}
 
 func (noopSink) Push(time.Time, string, string, string, string, string) {}
 
-// Service là một tiến trình nền chạy cùng daemon (control socket, dashboard...).
+// Service is a background process that runs alongside the daemon (control socket, dashboard...).
 type Service interface {
-	// Start chạy cho tới khi ctx hủy; trả lỗi nếu không khởi động được.
+	// Start runs until ctx is cancelled; returns an error if it fails to start.
 	Start(ctx context.Context) error
-	// Name dùng cho log.
+	// Name is used for logging.
 	Name() string
 }
 
-// App là daemon đã lắp ráp.
+// App is the assembled daemon.
 type App struct {
 	d   Deps
 	now func() time.Time
 }
 
-// New tạo App từ Deps đã chuẩn bị sẵn.
+// New creates an App from prepared Deps.
 func New(d Deps) *App {
 	now := d.Now
 	if now == nil {
@@ -106,14 +106,14 @@ func New(d Deps) *App {
 const (
 	saveInterval  = 30 * time.Second
 	pruneInterval = 5 * time.Minute
-	alertInterval = 1 * time.Minute // chu kỳ đánh giá cảnh báo health
+	alertInterval = 1 * time.Minute // health alert evaluation cycle
 )
 
 // Paths returns the log files the daemon needs to tail (union across detectors).
 func (a *App) Paths() []string { return a.d.Paths }
 
-// Run khôi phục state vào nftables, khởi động các service nền (control socket,
-// dashboard...), rồi tiêu thụ log cho tới khi ctx hủy.
+// Run restores state into nftables, starts the background services (control socket,
+// dashboard...), then consumes logs until ctx is cancelled.
 func (a *App) Run(ctx context.Context, tailer *ingest.Tailer, services ...Service) error {
 	a.Restore(ctx)
 
@@ -183,8 +183,8 @@ func (a *App) Run(ctx context.Context, tailer *ingest.Tailer, services ...Servic
 	}
 }
 
-// Restore nạp lại các IP còn hạn từ state vào nftables (set rỗng sau reboot).
-// Bỏ qua khi dry-run. Lỗi từng IP được log, không dừng cả quá trình.
+// Restore reloads the still-valid IPs from state into nftables (the set is empty after a
+// reboot). Skipped on dry-run. Per-IP errors are logged and do not halt the process.
 func (a *App) Restore(ctx context.Context) {
 	now := a.now()
 	active := a.d.State.Active(now)

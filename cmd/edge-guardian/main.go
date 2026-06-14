@@ -1,5 +1,5 @@
-// Command edge-guardian: intrusion prevention daemon — đọc log, phát hiện scanner,
-// ban IP qua nftables, thông báo. Xem docs/ để biết thiết kế chi tiết.
+// Command edge-guardian: intrusion prevention daemon — reads logs, detects scanners,
+// bans IPs via nftables, sends notifications. See docs/ for the detailed design.
 package main
 
 import (
@@ -22,7 +22,7 @@ import (
 	"github.com/sondt/edge-guardian/internal/ingest"
 )
 
-// version được set qua -ldflags "-X main.version=..." khi release.
+// version is set via -ldflags "-X main.version=..." at release time.
 var version = "dev"
 
 func main() {
@@ -91,9 +91,10 @@ func hashPasswordCommand(pw string) error {
 	return nil
 }
 
-// unbanCommand gỡ một IP. Nếu daemon đang chạy (control socket sẵn sàng), gửi lệnh
-// qua socket để cập nhật ngay state in-memory + nftables. Nếu daemon không chạy,
-// xử lý offline trực tiếp trên state file + nftables.
+// unbanCommand removes an IP. If the daemon is running (control socket available), it
+// sends the command over the socket to immediately update the in-memory state +
+// nftables. If the daemon is not running, it handles it offline directly on the state
+// file + nftables.
 func unbanCommand(cfg config.Config, logger *slog.Logger, ip string) error {
 	if cfg.Control.Enabled {
 		err := control.SendUnban(cfg.Control.SocketPath, ip)
@@ -103,7 +104,7 @@ func unbanCommand(cfg config.Config, logger *slog.Logger, ip string) error {
 			return nil
 		case errors.Is(err, control.ErrDaemonNotRunning):
 			logger.Info("daemon not running; unbanning offline", "ip", ip)
-			// rơi xuống đường offline bên dưới
+			// fall through to the offline path below
 		default:
 			return err
 		}

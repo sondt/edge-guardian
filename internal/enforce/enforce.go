@@ -1,9 +1,9 @@
-// Package enforce thực thi ban ở tầng kernel bằng nftables named set có timeout.
+// Package enforce enforces bans at the kernel level using an nftables named set with timeout.
 //
-// Thao tác nftables là Linux-only (native netlink). Triển khai thật nằm trong
-// nft_linux.go (build tag linux); nft_other.go cung cấp stub để toàn bộ module vẫn
-// build/test được trên các OS khác (macOS dev). Interface và config nằm ở đây để
-// độc lập nền tảng.
+// nftables operations are Linux-only (native netlink). The real implementation lives in
+// nft_linux.go (build tag linux); nft_other.go provides a stub so the whole module still
+// builds/tests on other OSes (macOS dev). The interface and config live here so they are
+// platform-independent.
 package enforce
 
 import (
@@ -11,29 +11,29 @@ import (
 	"time"
 )
 
-// Config tham số nftables, lấy từ block [ban] của file cấu hình.
+// Config holds nftables parameters, taken from the [ban] block of the config file.
 type Config struct {
 	Table      string
 	SetV4      string
 	SetV6      string
-	BlockSetV4 string // interval set cho blocklist công khai import (CIDR)
+	BlockSetV4 string // interval set for imported public blocklists (CIDR)
 	BlockSetV6 string
 }
 
-// Enforcer thêm/xóa IP khỏi blocklist nftables.
+// Enforcer adds/removes IPs from the nftables blocklist.
 type Enforcer interface {
-	// Ban thêm ip vào set tương ứng (v4/v6) kèm timeout còn lại.
+	// Ban adds ip to the corresponding set (v4/v6) with the remaining timeout.
 	Ban(ip netip.Addr, timeout time.Duration) error
-	// Unban xóa ip khỏi set. Không tồn tại không phải lỗi.
+	// Unban removes ip from the set. A non-existent entry is not an error.
 	Unban(ip netip.Addr) error
-	// ReplaceBlockset thay toàn bộ nội dung interval set blocklist import bằng các
-	// prefix cho trước (flush + nạp lại). Dùng cho import blocklist công khai định kỳ.
+	// ReplaceBlockset replaces the entire contents of the imported blocklist interval
+	// set with the given prefixes (flush + reload). Used for periodic public blocklist imports.
 	ReplaceBlockset(v4, v6 []netip.Prefix) error
-	// Close giải phóng kết nối netlink.
+	// Close releases the netlink connection.
 	Close() error
 }
 
-// New trả về Enforcer phù hợp nền tảng (nftables thật trên Linux, stub nơi khác).
+// New returns an Enforcer suited to the platform (real nftables on Linux, stub elsewhere).
 func New(cfg Config) (Enforcer, error) {
 	return newPlatform(cfg)
 }

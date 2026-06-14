@@ -1,5 +1,5 @@
-// Package state lưu trạng thái ban ra file JSON: dedup thông báo và khôi phục
-// nftables sau reboot. Ghi atomic (file tạm + rename) để tránh hỏng khi crash.
+// Package state persists ban state to a JSON file: notification dedup and nftables
+// restore after reboot. Writes are atomic (temp file + rename) to avoid corruption on crash.
 package state
 
 import (
@@ -12,11 +12,11 @@ import (
 	"time"
 )
 
-// Entry mô tả một IP từng/đang bị ban.
+// Entry describes an IP that was/is banned.
 type Entry struct {
 	IP        string    `json:"ip"`
-	Detector  string    `json:"detector"` // nguồn phát hiện: "http" | "sshd" | ...
-	Reason    string    `json:"reason"`   // lý do (vd path scanner, hoặc "failed SSH login")
+	Detector  string    `json:"detector"` // detection source: "http" | "sshd" | ...
+	Reason    string    `json:"reason"`   // reason (e.g. path scanner, or "failed SSH login")
 	FirstSeen time.Time `json:"first_seen"`
 	BannedAt  time.Time `json:"banned_at"`
 	ExpiresAt time.Time `json:"expires_at"`
@@ -24,19 +24,19 @@ type Entry struct {
 	BanCount  int       `json:"ban_count"`
 }
 
-// active báo entry còn hiệu lực tại thời điểm now.
+// active reports whether the entry is still in effect at time now.
 func (e Entry) active(now time.Time) bool {
 	return e.ExpiresAt.After(now)
 }
 
-// remembered báo entry còn nên giữ lại tại now: đang active, HOẶC đã hết hạn nhưng
-// còn trong "memory window" (giữ lịch sử offender để ban leo thang). memory=0 → chỉ
-// giữ entry còn active (hành vi cũ).
+// remembered reports whether the entry should still be kept at now: currently active,
+// OR expired but still within the "memory window" (keeping offender history for ban
+// escalation). memory=0 → keep only active entries (old behavior).
 func (e Entry) remembered(now time.Time, memory time.Duration) bool {
 	return e.ExpiresAt.Add(memory).After(now)
 }
 
-// Store giữ tập entry trong bộ nhớ, đồng bộ với file JSON trên đĩa.
+// Store keeps the set of entries in memory, synced with the JSON file on disk.
 type Store struct {
 	path string
 
@@ -44,10 +44,10 @@ type Store struct {
 	entries map[string]Entry
 }
 
-// Load đọc state từ path. File thiếu => store rỗng (không phải lỗi).
-// Các entry đã hết hạn tại now bị prune ngay khi nạp.
-// Load đọc state từ path. memory là khoảng giữ lịch sử offender đã hết hạn (cho ban
-// leo thang); memory=0 → chỉ giữ entry còn active (prune entry hết hạn ngay khi nạp).
+// Load reads state from path. A missing file => empty store (not an error).
+// Entries expired at now are pruned as soon as they are loaded.
+// Load reads state from path. memory is the window for keeping expired offender history
+// (for ban escalation); memory=0 → keep only active entries (prune expired entries on load).
 func Load(path string, now time.Time, memory time.Duration) (*Store, error) {
 	s := &Store{path: path, entries: make(map[string]Entry)}
 
@@ -74,7 +74,7 @@ func Load(path string, now time.Time, memory time.Duration) (*Store, error) {
 	return s, nil
 }
 
-// Get trả về (copy của) entry theo IP.
+// Get returns a (copy of the) entry by IP.
 func (s *Store) Get(ip string) (Entry, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -82,7 +82,7 @@ func (s *Store) Get(ip string) (Entry, bool) {
 	return e, ok
 }
 
-// IsBanned cho biết IP đang bị ban (còn hạn) tại now.
+// IsBanned reports whether the IP is currently banned (not expired) at now.
 func (s *Store) IsBanned(ip string, now time.Time) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -90,7 +90,7 @@ func (s *Store) IsBanned(ip string, now time.Time) bool {
 	return ok && e.active(now)
 }
 
-// RecordHit tăng counter hit cho một IP đã bị ban (không tạo entry mới).
+// RecordHit increments the hit counter for an already-banned IP (does not create a new entry).
 func (s *Store) RecordHit(ip string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -100,7 +100,7 @@ func (s *Store) RecordHit(ip string) {
 	}
 }
 
-// Ban ghi/cập nhật một entry ban. Trả về entry kết quả (bất biến với caller).
+// Ban writes/updates a ban entry. Returns the resulting entry (immutable to the caller).
 func (s *Store) Ban(ip, detector, reason string, hits int, now, expires time.Time) Entry {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -123,7 +123,7 @@ func (s *Store) Ban(ip, detector, reason string, hits int, now, expires time.Tim
 	return e
 }
 
-// Remove xóa một IP khỏi state. Trả về true nếu có tồn tại.
+// Remove deletes an IP from state. Returns true if it existed.
 func (s *Store) Remove(ip string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -132,10 +132,10 @@ func (s *Store) Remove(ip string) bool {
 	return ok
 }
 
-// Prune xóa khỏi bộ nhớ mọi entry đã hết hạn tại now. Trả về số entry đã xóa.
-// Gọi định kỳ để map/state file không phình theo lưu lượng quét.
-// Prune xóa các entry không còn nên giữ tại now (hết hạn VÀ quá memory window).
-// memory=0 → xóa mọi entry đã hết hạn. Trả về số entry đã xóa.
+// Prune removes from memory every entry expired at now. Returns the number of entries removed.
+// Call periodically so the map/state file doesn't grow with scan traffic.
+// Prune removes entries that should no longer be kept at now (expired AND past the memory window).
+// memory=0 → remove every expired entry. Returns the number of entries removed.
 func (s *Store) Prune(now time.Time, memory time.Duration) int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -150,7 +150,7 @@ func (s *Store) Prune(now time.Time, memory time.Duration) int {
 	return removed
 }
 
-// Active trả về danh sách entry còn hạn tại now, sắp xếp theo IP (ổn định).
+// Active returns the list of entries still valid at now, sorted by IP (stable).
 func (s *Store) Active(now time.Time) []Entry {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -165,7 +165,7 @@ func (s *Store) Active(now time.Time) []Entry {
 	return out
 }
 
-// Save ghi toàn bộ entry ra đĩa theo cơ chế atomic (tmp + rename).
+// Save writes all entries to disk atomically (tmp + rename).
 func (s *Store) Save() error {
 	s.mu.Lock()
 	list := make([]Entry, 0, len(s.entries))
@@ -187,7 +187,7 @@ func (s *Store) Save() error {
 		return fmt.Errorf("create temp state in %q: %w", dir, err)
 	}
 	tmpName := tmp.Name()
-	defer os.Remove(tmpName) // no-op nếu rename thành công
+	defer os.Remove(tmpName) // no-op if rename succeeds
 
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()

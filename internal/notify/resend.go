@@ -11,20 +11,20 @@ import (
 	"time"
 )
 
-// resendEndpoint là API gửi email của Resend (https://resend.com).
+// resendEndpoint is Resend's email-sending API (https://resend.com).
 const resendEndpoint = "https://api.resend.com/emails"
 
-// Resend gửi thông báo ban qua email bằng Resend API (REST, Bearer token).
+// Resend sends ban notifications by email via the Resend API (REST, Bearer token).
 type Resend struct {
 	apiKey   string
 	from     string
 	to       []string
-	endpoint string // cho phép override khi test
+	endpoint string // allows override in tests
 	client   *http.Client
 }
 
-// NewResend tạo notifier email qua Resend. from là địa chỉ gửi (phải thuộc domain đã
-// verify ở Resend), to là danh sách người nhận.
+// NewResend creates an email notifier via Resend. from is the sender address (must belong to a
+// domain verified at Resend), to is the recipient list.
 func NewResend(apiKey, from string, to []string) *Resend {
 	return &Resend{
 		apiKey:   apiKey,
@@ -35,18 +35,18 @@ func NewResend(apiKey, from string, to []string) *Resend {
 	}
 }
 
-// Notify gửi một email cho mỗi sự kiện ban.
+// Notify sends one email per ban event.
 func (r *Resend) Notify(ctx context.Context, ev Event) error {
 	return r.post(ctx, subject(ev), htmlBody(ev), textBody(ev))
 }
 
-// NotifyHealth gửi email cảnh báo sức khỏe site.
+// NotifyHealth sends a site health alert email.
 func (r *Resend) NotifyHealth(ctx context.Context, ev HealthEvent) error {
 	subj := fmt.Sprintf("[edge-guardian] %s %s", healthVerb(ev), ev.Site)
 	return r.post(ctx, subj, healthHTML(ev), healthText(ev))
 }
 
-// post gửi một email qua Resend (phần chung cho Notify/NotifyHealth).
+// post sends one email via Resend (shared by Notify/NotifyHealth).
 func (r *Resend) post(ctx context.Context, subject, html, text string) error {
 	payload := map[string]any{
 		"from":    r.from,
@@ -69,8 +69,8 @@ func (r *Resend) post(ctx context.Context, subject, html, text string) error {
 
 	resp, err := r.client.Do(req)
 	if err != nil {
-		// API key nằm ở header (không ở URL) nên url.Error không lộ key, nhưng vẫn
-		// strip URL cho gọn log.
+		// The API key is in the header (not the URL), so url.Error does not leak the key,
+		// but still strip the URL to keep the log clean.
 		return fmt.Errorf("send resend email: %w", sanitizeURLError(err))
 	}
 	defer resp.Body.Close()

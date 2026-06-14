@@ -10,9 +10,9 @@ import (
 	"github.com/sondt/edge-guardian/internal/notify"
 )
 
-// ProcessLine chạy pipeline cho một dòng log: với mỗi detector, soi dòng → nếu hit
-// thì allowlist → dedup → ngưỡng → ban. Các pattern detector rời nhau nên tối đa một
-// detector khớp; khớp đầu tiên thắng. Tách riêng để unit-test không cần channel/tail.
+// ProcessLine runs the pipeline for one log line: for each detector, inspect the line → on a
+// hit, allowlist → dedup → threshold → ban. Detector patterns are disjoint so at most one
+// detector matches; the first match wins. Split out so unit tests don't need a channel/tail.
 func (a *App) ProcessLine(line string) {
 	now := a.now()
 	for _, det := range a.d.Detectors {
@@ -25,7 +25,7 @@ func (a *App) ProcessLine(line string) {
 	}
 }
 
-// handleHit xử lý một dòng đã khớp detector: kiểm allowlist, dedup, ngưỡng, rồi ban.
+// handleHit processes a line that matched a detector: check allowlist, dedup, threshold, then ban.
 func (a *App) handleHit(det *Detector, ip, sub, reason string, now time.Time) {
 	addr, err := parseAddr(ip)
 	if err != nil {
@@ -41,7 +41,7 @@ func (a *App) handleHit(det *Detector, ip, sub, reason string, now time.Time) {
 	// consistent with `edge-guardian unban`, which also keys on addr.String().
 	key := addr.String()
 
-	// Đã bị ban (còn hạn): chỉ cộng hit, KHÔNG thông báo lại.
+	// Already banned (still valid): just add the hit, do NOT re-notify.
 	if a.d.State.IsBanned(key, now) {
 		a.d.State.RecordHit(key)
 		return
@@ -56,11 +56,11 @@ func (a *App) handleHit(det *Detector, ip, sub, reason string, now time.Time) {
 	a.ban(det, addr, key, reason, count, now)
 }
 
-// ban thực thi quyết định ban: cập nhật state, (trừ dry-run) thêm vào nftables,
-// lưu state và gửi thông báo.
+// ban carries out the ban decision: update state, (except on dry-run) add to nftables,
+// save state, and send a notification.
 func (a *App) ban(det *Detector, addr netip.Addr, ip, reason string, hits int, now time.Time) {
-	// Ban leo thang: số lần đã bị ban trước đó (giữ trong state qua memory window)
-	// quyết định thời gian ban lần này.
+	// Escalating ban: the number of prior bans (kept in state across the memory window)
+	// determines this ban's duration.
 	prior, _ := a.d.State.Get(ip)
 	dur := banDurationFor(prior.BanCount, a.d.Escalation, a.d.BanDuration)
 	expires := now.Add(dur)
@@ -112,8 +112,8 @@ func (a *App) notifyEvent(ip, reason string, hits int, expires time.Time, countr
 	}
 }
 
-// observeHealth nạp một dòng log vào nhánh health (mọi dòng, O(1)). No-op nếu tắt hoặc
-// dòng không parse được. Khác detection: KHÔNG ban, chỉ tăng counter per-site.
+// observeHealth feeds a log line into the health branch (every line, O(1)). No-op if disabled
+// or the line doesn't parse. Unlike detection: it does NOT ban, only increments per-site counters.
 func (a *App) observeHealth(line string) {
 	if a.d.Health == nil || a.d.HealthParser == nil {
 		return
@@ -126,8 +126,8 @@ func (a *App) observeHealth(line string) {
 	a.d.Health.Observe(ev.Host, ev.Status, ev.RequestTime, ev.Bytes, upstreamErr, a.now())
 }
 
-// evaluateHealth chụp các site và gửi cảnh báo (firing/recovered) qua Notifier. Gọi định
-// kỳ (mỗi phút).
+// evaluateHealth snapshots the sites and sends alerts (firing/recovered) via the Notifier.
+// Called periodically (every minute).
 func (a *App) evaluateHealth() {
 	if a.d.Health == nil || a.d.HealthAlerter == nil {
 		return
@@ -150,7 +150,7 @@ func (a *App) notifyHealth(al health.Alert) {
 	}
 }
 
-// parseAddr chuẩn hóa chuỗi IP thành netip.Addr (gỡ IPv4-mapped IPv6).
+// parseAddr normalizes an IP string into a netip.Addr (strips IPv4-mapped IPv6).
 func parseAddr(ip string) (netip.Addr, error) {
 	addr, err := netip.ParseAddr(ip)
 	if err != nil {

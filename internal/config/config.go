@@ -1,4 +1,4 @@
-// Package config đọc và validate file cấu hình TOML của edge-guardian.
+// Package config reads and validates edge-guardian's TOML configuration file.
 package config
 
 import (
@@ -15,7 +15,7 @@ import (
 	"github.com/sondt/edge-guardian/internal/parse"
 )
 
-// Config là toàn bộ cấu hình của daemon, ánh xạ từ file TOML.
+// Config is the daemon's complete configuration, mapped from the TOML file.
 type Config struct {
 	Log       LogConfig       `toml:"log"`
 	Detection DetectionConfig `toml:"detection"`
@@ -36,15 +36,15 @@ type Config struct {
 	Blocklist BlocklistConfig `toml:"blocklist"`
 }
 
-// BlocklistConfig — import blocklist IP công khai (FireHOL, Spamhaus...) nạp proactively
-// vào nftables interval set.
+// BlocklistConfig — import public IP blocklists (FireHOL, Spamhaus...) loaded proactively
+// into the nftables interval set.
 type BlocklistConfig struct {
 	Enabled      bool     `toml:"enabled"`
-	Sources      []string `toml:"sources"`       // URL các blocklist
-	RefreshHours int      `toml:"refresh_hours"` // chu kỳ làm mới (giờ)
+	Sources      []string `toml:"sources"`       // blocklist URLs
+	RefreshHours int      `toml:"refresh_hours"` // refresh interval (hours)
 }
 
-// RefreshInterval trả về chu kỳ làm mới dưới dạng time.Duration (mặc định 24h nếu <=0).
+// RefreshInterval returns the refresh interval as a time.Duration (defaults to 24h if <=0).
 func (c BlocklistConfig) RefreshInterval() time.Duration {
 	if c.RefreshHours <= 0 {
 		return 24 * time.Hour
@@ -52,28 +52,28 @@ func (c BlocklistConfig) RefreshInterval() time.Duration {
 	return time.Duration(c.RefreshHours) * time.Hour
 }
 
-// HoneypotConfig — bắt gói tới port mồi (nft LOG prefix) → ban ngay (threshold 1).
+// HoneypotConfig — catch packets hitting a decoy port (nft LOG prefix) → ban immediately (threshold 1).
 type HoneypotConfig struct {
 	Enabled   bool     `toml:"enabled"`
-	Paths     []string `toml:"paths"`      // file chứa kernel netfilter LOG (journald/rsyslog route ra)
-	LogPrefix string   `toml:"log_prefix"` // prefix của rule nft, vd "EDGEGUARD-HONEYPOT"
+	Paths     []string `toml:"paths"`      // file holding kernel netfilter LOG (routed out by journald/rsyslog)
+	LogPrefix string   `toml:"log_prefix"` // nft rule prefix, e.g. "EDGEGUARD-HONEYPOT"
 }
 
-// PortScanConfig — đếm số PORT đích distinct mỗi IP (nft LOG prefix) → ban khi vượt ngưỡng.
+// PortScanConfig — count distinct destination PORTs per IP (nft LOG prefix) → ban when over threshold.
 type PortScanConfig struct {
 	Enabled    bool     `toml:"enabled"`
 	Paths      []string `toml:"paths"`
-	LogPrefix  string   `toml:"log_prefix"` // vd "EDGEGUARD-SCAN"
-	Threshold  int      `toml:"threshold"`  // số port distinct trong cửa sổ
+	LogPrefix  string   `toml:"log_prefix"` // e.g. "EDGEGUARD-SCAN"
+	Threshold  int      `toml:"threshold"`  // number of distinct ports within the window
 	WindowSecs int      `toml:"window_secs"`
 }
 
-// WindowDuration trả về cửa sổ trượt của port scan dưới dạng time.Duration.
+// WindowDuration returns the port scan sliding window as a time.Duration.
 func (c PortScanConfig) WindowDuration() time.Duration {
 	return time.Duration(c.WindowSecs) * time.Second
 }
 
-// SSHDConfig điều khiển phát hiện SSH brute-force từ auth.log/journald.
+// SSHDConfig controls SSH brute-force detection from auth.log/journald.
 type SSHDConfig struct {
 	Enabled    bool     `toml:"enabled"`
 	Paths      []string `toml:"paths"`
@@ -81,19 +81,19 @@ type SSHDConfig struct {
 	WindowSecs int      `toml:"window_secs"`
 }
 
-// WindowDuration trả về cửa sổ trượt của sshd dưới dạng time.Duration.
+// WindowDuration returns the sshd sliding window as a time.Duration.
 func (c SSHDConfig) WindowDuration() time.Duration {
 	return time.Duration(c.WindowSecs) * time.Second
 }
 
-// ControlConfig cấu hình unix control socket — cho phép `edge-guardian unban` tác động
-// trực tiếp lên daemon đang chạy (cập nhật state in-memory + nftables).
+// ControlConfig configures the unix control socket — lets `edge-guardian unban` act
+// directly on the running daemon (updating in-memory state + nftables).
 type ControlConfig struct {
 	Enabled    bool   `toml:"enabled"`
 	SocketPath string `toml:"socket_path"`
 }
 
-// DashboardConfig cấu hình web dashboard local (tùy chọn). Mặc định bind localhost.
+// DashboardConfig configures the local web dashboard (optional). Binds to localhost by default.
 type DashboardConfig struct {
 	Enabled      bool   `toml:"enabled"`
 	Listen       string `toml:"listen"`
@@ -101,13 +101,13 @@ type DashboardConfig struct {
 	PasswordHash string `toml:"password_hash"` // bcrypt
 }
 
-// LogConfig khai báo nguồn log và cách trích xuất.
+// LogConfig declares the log sources and how to extract from them.
 type LogConfig struct {
 	Paths     []string `toml:"paths"`
 	LineRegex string   `toml:"line_regex"`
 }
 
-// DetectionConfig điều khiển phát hiện HTTP scanner.
+// DetectionConfig controls HTTP scanner detection.
 type DetectionConfig struct {
 	BadURIPatterns []string `toml:"bad_uri_patterns"`
 	Threshold      int      `toml:"threshold"`
@@ -115,23 +115,24 @@ type DetectionConfig struct {
 	DryRun         bool     `toml:"dry_run"`
 }
 
-// ExploitConfig điều khiển phát hiện exploit pattern (SQLi/path-traversal/RCE/Log4Shell)
-// trên URI của access log (cùng nguồn với HTTP scanner). MẶC ĐỊNH TẮT: rủi ro false
-// positive cao hơn path scanner nên cần chạy dry-run quan sát + tinh chỉnh trước khi bật.
+// ExploitConfig controls exploit-pattern detection (SQLi/path-traversal/RCE/Log4Shell)
+// on access-log URIs (same source as the HTTP scanner). DISABLED BY DEFAULT: it carries a
+// higher false-positive risk than the path scanner, so run it in dry-run to observe and tune
+// before enabling.
 type ExploitConfig struct {
 	Enabled    bool     `toml:"enabled"`
-	Patterns   []string `toml:"patterns"`  // regex (tự case-insensitive) áp lên URI
-	Threshold  int      `toml:"threshold"` // số lần khớp trong cửa sổ để ban
+	Patterns   []string `toml:"patterns"`  // regex (auto case-insensitive) applied to the URI
+	Threshold  int      `toml:"threshold"` // number of matches within the window to ban
 	WindowSecs int      `toml:"window_secs"`
 }
 
-// WindowDuration trả về cửa sổ trượt của exploit dưới dạng time.Duration.
+// WindowDuration returns the exploit sliding window as a time.Duration.
 func (c ExploitConfig) WindowDuration() time.Duration {
 	return time.Duration(c.WindowSecs) * time.Second
 }
 
-// DefaultExploitPatterns trả về bộ chữ ký exploit mặc định (đã anchored để giảm false
-// positive). Áp lên URI (gồm cả query string). Bao gồm cả dạng URL-encoded phổ biến.
+// DefaultExploitPatterns returns the default exploit signature set (anchored to reduce false
+// positives). Applied to the URI (including the query string). Covers common URL-encoded forms too.
 func DefaultExploitPatterns() []string {
 	return []string{
 		// Path traversal / LFI
@@ -161,24 +162,24 @@ func DefaultExploitPatterns() []string {
 	}
 }
 
-// BadBotConfig điều khiển phát hiện bad-bot theo User-Agent (vuln scanner / attack tool
-// / thư viện tự động lạm dụng). Đọc cùng access log với HTTP scanner nhưng khớp trường
-// user-agent thay vì URI, nên line_regex PHẢI có group (?P<ua>...).
+// BadBotConfig controls bad-bot detection by User-Agent (vuln scanner / attack tool
+// / abusive automation library). Reads the same access log as the HTTP scanner but matches the
+// user-agent field instead of the URI, so line_regex MUST have a (?P<ua>...) group.
 type BadBotConfig struct {
 	Enabled    bool     `toml:"enabled"`
-	Patterns   []string `toml:"patterns"`  // regex (tự case-insensitive) áp lên User-Agent
-	Threshold  int      `toml:"threshold"` // số lần khớp trong cửa sổ để ban
+	Patterns   []string `toml:"patterns"`  // regex (auto case-insensitive) applied to the User-Agent
+	Threshold  int      `toml:"threshold"` // number of matches within the window to ban
 	WindowSecs int      `toml:"window_secs"`
 }
 
-// WindowDuration trả về cửa sổ trượt của bad-bot dưới dạng time.Duration.
+// WindowDuration returns the bad-bot sliding window as a time.Duration.
 func (c BadBotConfig) WindowDuration() time.Duration {
 	return time.Duration(c.WindowSecs) * time.Second
 }
 
-// DefaultBadBotPatterns trả về bộ chữ ký User-Agent mặc định: các công cụ pentest/scanner
-// và bot tự động KHÔNG có lý do hợp lệ để chạm tới web server thường. Anchor theo từ
-// (\b) để giảm false positive với UA trình duyệt thật.
+// DefaultBadBotPatterns returns the default User-Agent signature set: pentest/scanner tools
+// and automated bots with NO legitimate reason to reach a normal web server. Word-anchored
+// (\b) to reduce false positives against real browser UAs.
 func DefaultBadBotPatterns() []string {
 	return []string{
 		// Vulnerability / pentest scanners
@@ -187,45 +188,46 @@ func DefaultBadBotPatterns() []string {
 		`\b(acunetix|netsparker|nessus|openvas|qualys|whatweb|wpscan|joomscan)\b`,
 		`\b(nuclei|httpx|dirbuster|gobuster|feroxbuster|ffuf|dirsearch|wfuzz)\b`,
 		`\b(masscan|zgrab|zmap|nmap|nuclei|xray|hydra)\b`,
-		// Mass scrapers / abusive crawlers thường gắn với khai thác
+		// Mass scrapers / abusive crawlers often tied to exploitation
 		`\b(semrushbot|ahrefsbot|mj12bot|dotbot|petalbot|blexbot|seznambot)\b`,
-		// Generic automation libraries (rủi ro FP cao hơn — tỉa nếu bạn có client hợp lệ)
+		// Generic automation libraries (higher FP risk — trim if you have legitimate clients)
 		`\b(python-requests|go-http-client|libwww-perl|winhttp|java)/`,
 		`\b(curl|wget)/`,
 		`\b(scrapy|httpunit|okhttp|aiohttp|node-fetch|axios)\b`,
 	}
 }
 
-// RateLimitConfig điều khiển phát hiện rate-abuse / DoS-lite: một IP vượt ngưỡng TỔNG
-// số request trong cửa sổ (không quan tâm nội dung). KHÔNG signature như các detector
-// khác → đây là nguồn rủi ro false-positive CAO NHẤT: proxy/CDN/monitoring gộp nhiều
-// client sau một IP sẽ vượt ngưỡng. Mặc định TẮT, ngưỡng cao, BẮT BUỘC allowlist hạ tầng.
+// RateLimitConfig controls rate-abuse / DoS-lite detection: an IP that exceeds the TOTAL
+// request count within the window (regardless of content). NO signature like the other
+// detectors → this is the HIGHEST false-positive-risk source: proxies/CDNs/monitoring that
+// aggregate many clients behind one IP will exceed the threshold. Disabled by default, high
+// threshold, MUST allowlist infrastructure.
 type RateLimitConfig struct {
 	Enabled    bool `toml:"enabled"`
-	Threshold  int  `toml:"threshold"`   // số request trong cửa sổ để ban
-	WindowSecs int  `toml:"window_secs"` // độ rộng cửa sổ (giây)
+	Threshold  int  `toml:"threshold"`   // number of requests within the window to ban
+	WindowSecs int  `toml:"window_secs"` // window width (seconds)
 }
 
-// WindowDuration trả về cửa sổ trượt của rate-limit dưới dạng time.Duration.
+// WindowDuration returns the rate-limit sliding window as a time.Duration.
 func (c RateLimitConfig) WindowDuration() time.Duration {
 	return time.Duration(c.WindowSecs) * time.Second
 }
 
-// HealthConfig điều khiển nhánh "sức khỏe biên": đọc MỌI dòng access log, tổng hợp
-// counter per-site (status mix, error rate, req/s, latency) và cảnh báo khi site
-// degraded/down. KHÔNG ban IP. Cần log có host/status (+ request_time cho latency) —
-// khuyến nghị nginx JSON format (xem docs/10).
+// HealthConfig controls the "edge health" branch: read EVERY access-log line, aggregate
+// per-site counters (status mix, error rate, req/s, latency) and alert when a site is
+// degraded/down. Does NOT ban IPs. Requires logs with host/status (+ request_time for latency) —
+// nginx JSON format recommended (see docs/10).
 type HealthConfig struct {
 	Enabled       bool     `toml:"enabled"`
-	Sites         []string `toml:"sites"`          // host theo dõi; rỗng = mọi host trong log
-	WindowMins    int      `toml:"window_mins"`    // số bucket phút giữ trong RAM
-	ErrRatioPct   float64  `toml:"err_ratio_pct"`  // ngưỡng 5xx ratio cảnh báo (vd 5)
-	LatencyP95Ms  int      `toml:"latency_p95_ms"` // ngưỡng p95 (ms); 0 = bỏ qua latency
-	SustainedMins int      `toml:"sustained_mins"` // điều kiện phải giữ bao lâu mới báo
-	CooldownMins  int      `toml:"cooldown_mins"`  // im sau khi báo
+	Sites         []string `toml:"sites"`          // hosts to monitor; empty = every host in the log
+	WindowMins    int      `toml:"window_mins"`    // number of minute buckets kept in RAM
+	ErrRatioPct   float64  `toml:"err_ratio_pct"`  // 5xx ratio alert threshold (e.g. 5)
+	LatencyP95Ms  int      `toml:"latency_p95_ms"` // p95 threshold (ms); 0 = ignore latency
+	SustainedMins int      `toml:"sustained_mins"` // how long the condition must hold before alerting
+	CooldownMins  int      `toml:"cooldown_mins"`  // stay silent after alerting
 }
 
-// Các helper chuyển ngưỡng config sang dạng package health dùng (tỷ lệ 0..1, giây).
+// Helpers converting config thresholds into the form the health package uses (ratio 0..1, seconds).
 func (c HealthConfig) ErrRatio() float64 { return c.ErrRatioPct / 100 }
 func (c HealthConfig) P95Sec() float64   { return float64(c.LatencyP95Ms) / 1000 }
 func (c HealthConfig) Sustained() time.Duration {
@@ -235,7 +237,7 @@ func (c HealthConfig) Cooldown() time.Duration {
 	return time.Duration(c.CooldownMins) * time.Minute
 }
 
-// BanConfig điều khiển chặn nftables.
+// BanConfig controls nftables blocking.
 type BanConfig struct {
 	Duration  string   `toml:"duration"`
 	Whitelist []string `toml:"whitelist"`
@@ -243,20 +245,20 @@ type BanConfig struct {
 	NftSetV4  string   `toml:"nft_set_v4"`
 	NftSetV6  string   `toml:"nft_set_v6"`
 
-	// Escalation: thời gian ban leo thang theo số lần tái phạm. Rỗng = ban phẳng
-	// (luôn dùng Duration). Lần tái phạm thứ N dùng Escalation[min(N, len-1)]. Giá trị
-	// "permanent" = ban gần như vĩnh viễn. Vd ["24h","168h","720h","permanent"].
+	// Escalation: ban durations that escalate with the number of repeat offenses. Empty = flat
+	// ban (always use Duration). The Nth repeat offense uses Escalation[min(N, len-1)]. The value
+	// "permanent" = a near-permanent ban. E.g. ["24h","168h","720h","permanent"].
 	Escalation []string `toml:"escalation"`
-	// EscalationMemory: giữ lịch sử offender (số lần bị ban) bao lâu sau khi ban hết
-	// hạn, để đếm tái phạm. Mặc định 720h (30 ngày) khi escalation bật.
+	// EscalationMemory: how long to keep offender history (ban count) after a ban expires,
+	// to count repeat offenses. Defaults to 720h (30 days) when escalation is enabled.
 	EscalationMemory string `toml:"escalation_memory"`
 }
 
-// permanentDuration là sentinel cho ban "vĩnh viễn" (100 năm — vượt mọi vòng đời thực).
+// permanentDuration is the sentinel for a "permanent" ban (100 years — beyond any real lifetime).
 const permanentDuration = 100 * 365 * 24 * time.Hour
 
-// EscalationDurations parse danh sách escalation thành []time.Duration ("permanent" →
-// permanentDuration). Rỗng → nil (ban phẳng).
+// EscalationDurations parses the escalation list into []time.Duration ("permanent" →
+// permanentDuration). Empty → nil (flat ban).
 func (c BanConfig) EscalationDurations() ([]time.Duration, error) {
 	if len(c.Escalation) == 0 {
 		return nil, nil
@@ -276,8 +278,8 @@ func (c BanConfig) EscalationDurations() ([]time.Duration, error) {
 	return out, nil
 }
 
-// EscalationMemoryDuration trả về memory window (mặc định 30 ngày khi escalation bật,
-// 0 khi tắt).
+// EscalationMemoryDuration returns the memory window (defaults to 30 days when escalation is
+// enabled, 0 when disabled).
 func (c BanConfig) EscalationMemoryDuration() (time.Duration, error) {
 	if len(c.Escalation) == 0 {
 		return 0, nil
@@ -288,36 +290,36 @@ func (c BanConfig) EscalationMemoryDuration() (time.Duration, error) {
 	return parseDuration(c.EscalationMemory)
 }
 
-// TelegramConfig cấu hình kênh thông báo Telegram.
+// TelegramConfig configures the Telegram notification channel.
 type TelegramConfig struct {
 	Enabled  bool   `toml:"enabled"`
 	BotToken string `toml:"bot_token"`
 	ChatID   string `toml:"chat_id"`
 }
 
-// EmailConfig cấu hình kênh thông báo email qua Resend (https://resend.com).
+// EmailConfig configures the email notification channel via Resend (https://resend.com).
 type EmailConfig struct {
 	Enabled      bool     `toml:"enabled"`
 	ResendAPIKey string   `toml:"resend_api_key"`
-	From         string   `toml:"from"` // địa chỉ gửi (domain đã verify ở Resend)
-	To           []string `toml:"to"`   // danh sách người nhận
+	From         string   `toml:"from"` // sender address (domain verified at Resend)
+	To           []string `toml:"to"`   // recipient list
 }
 
-// GeoIPConfig (tùy chọn) trỏ tới file MMDB OFFLINE để giải IP → vị trí/mạng. Mỗi giá
-// trị là 1+ đường dẫn ngăn cách bằng dấu phẩy (bộ City của sapics tách riêng IPv4/IPv6
-// nên trỏ cả hai). Rỗng = tắt. Đọc trực tiếp maxminddb nên dùng được CẢ file sapics/
-// ip-location-db MIỄN PHÍ lẫn MaxMind/DB-IP chuẩn — xem internal/geoip.
+// GeoIPConfig (optional) points to OFFLINE MMDB files to resolve IP → location/network. Each
+// value is 1+ comma-separated paths (sapics's City set splits IPv4/IPv6 separately, so point
+// at both). Empty = disabled. Reads maxminddb directly, so it works with BOTH the FREE sapics/
+// ip-location-db files and standard MaxMind/DB-IP — see internal/geoip.
 type GeoIPConfig struct {
-	CityDB string `toml:"city_db"` // DB vị trí (quốc gia/tỉnh/thành/toạ độ)
-	ASNDB  string `toml:"asn_db"`  // DB mạng (ASN + tên ISP/tổ chức)
+	CityDB string `toml:"city_db"` // location DB (country/region/city/coordinates)
+	ASNDB  string `toml:"asn_db"`  // network DB (ASN + ISP/organization name)
 }
 
-// StateConfig vị trí file state JSON.
+// StateConfig is the location of the JSON state file.
 type StateConfig struct {
 	Path string `toml:"path"`
 }
 
-// Defaults là các giá trị mặc định an toàn áp dụng trước khi đọc file.
+// Defaults are the safe default values applied before reading the file.
 func Defaults() Config {
 	return Config{
 		Log: LogConfig{
@@ -402,7 +404,7 @@ func Defaults() Config {
 	}
 }
 
-// Load đọc file TOML tại path, phủ lên defaults, rồi validate.
+// Load reads the TOML file at path, overlays it on the defaults, then validates.
 func Load(path string) (Config, error) {
 	cfg := Defaults()
 
@@ -419,17 +421,17 @@ func Load(path string) (Config, error) {
 	return cfg, nil
 }
 
-// BanDuration trả về thời gian ban đã parse từ Ban.Duration.
+// BanDuration returns the ban duration parsed from Ban.Duration.
 func (c Config) BanDuration() (time.Duration, error) {
 	return parseDuration(c.Ban.Duration)
 }
 
-// WindowDuration trả về cửa sổ trượt dưới dạng time.Duration.
+// WindowDuration returns the sliding window as a time.Duration.
 func (c Config) WindowDuration() time.Duration {
 	return time.Duration(c.Detection.WindowSecs) * time.Second
 }
 
-// Whitelist trả về danh sách prefix đã parse (đã validate ở Validate).
+// Whitelist returns the parsed prefix list (already validated in Validate).
 func (c Config) Whitelist() ([]netip.Prefix, error) {
 	out := make([]netip.Prefix, 0, len(c.Ban.Whitelist))
 	for _, s := range c.Ban.Whitelist {
@@ -442,7 +444,7 @@ func (c Config) Whitelist() ([]netip.Prefix, error) {
 	return out, nil
 }
 
-// Validate kiểm tra cấu hình ở biên hệ thống; fail-fast với thông báo rõ ràng.
+// Validate checks the configuration at the system boundary; fails fast with a clear message.
 func (c Config) Validate() error {
 	if len(c.Log.Paths) == 0 {
 		return fmt.Errorf("log.paths must list at least one log file")
@@ -696,7 +698,7 @@ func validateLineRegex(pattern string) error {
 	return nil
 }
 
-// parseDuration hỗ trợ cú pháp nft timeout: time.ParseDuration cộng hậu tố "d" (ngày).
+// parseDuration supports the nft timeout syntax: time.ParseDuration plus a "d" (day) suffix.
 func parseDuration(s string) (time.Duration, error) {
 	if s == "" {
 		return 0, fmt.Errorf("empty duration")

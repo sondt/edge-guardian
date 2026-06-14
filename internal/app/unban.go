@@ -10,8 +10,9 @@ import (
 	"github.com/sondt/edge-guardian/internal/state"
 )
 
-// Unban gỡ một IP khỏi CẢ nftables set VÀ state.json, để IP không bị nạp lại sau
-// khi daemon restart. Đây là điểm UX docs nêu cần một lệnh xử lý cả hai nơi.
+// Unban removes an IP from BOTH the nftables set AND state.json, so the IP is not reloaded
+// after the daemon restarts. This is the UX point the docs note needs a single command that
+// handles both places.
 func Unban(cfg config.Config, logger *slog.Logger, ip string) error {
 	addr, err := parseAddr(ip)
 	if err != nil {

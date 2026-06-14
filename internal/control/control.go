@@ -1,18 +1,19 @@
-// Package control cung cấp một unix control socket để CLI điều khiển daemon đang
-// chạy (hiện tại: unban). Giao thức là JSON theo dòng (newline-delimited), một
-// request mỗi kết nối.
+// Package control provides a unix control socket that lets the CLI control the
+// running daemon (currently: unban). The protocol is newline-delimited JSON, one
+// request per connection.
 //
-// Bảo mật: socket được tạo với quyền 0600 (chỉ root đọc/ghi) — phù hợp với mô hình
-// daemon chạy root/CAP_NET_ADMIN. Không có xác thực thêm; quyền file là ranh giới.
+// Security: the socket is created with mode 0600 (root read/write only) — matching the
+// daemon-runs-as-root/CAP_NET_ADMIN model. There is no extra authentication; the file
+// permissions are the boundary.
 package control
 
-// Request là lệnh gửi tới daemon.
+// Request is a command sent to the daemon.
 type Request struct {
 	Cmd string `json:"cmd"`          // "unban" | "ping"
-	IP  string `json:"ip,omitempty"` // cho "unban"
+	IP  string `json:"ip,omitempty"` // for "unban"
 }
 
-// Response là kết quả trả về.
+// Response is the returned result.
 type Response struct {
 	OK    bool   `json:"ok"`
 	Error string `json:"error,omitempty"`

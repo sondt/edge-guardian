@@ -6,32 +6,32 @@ import (
 	"time"
 )
 
-// AlertConfig điều khiển logic chống nhiễu của alerter.
+// AlertConfig controls the alerter's anti-noise logic.
 type AlertConfig struct {
 	Thresholds Thresholds
-	Sustained  time.Duration // điều kiện phải giữ liên tục bao lâu trước khi báo
-	Cooldown   time.Duration // im sau khi báo, tránh spam
+	Sustained  time.Duration // how long the condition must hold continuously before alerting
+	Cooldown   time.Duration // stay quiet after alerting, to avoid spam
 }
 
-// Alert là một chuyển trạng thái cần gửi đi (firing = degraded/down, !firing = recovered).
+// Alert is a state transition that must be sent (firing = degraded/down, !firing = recovered).
 type Alert struct {
 	Site    string
 	Firing  bool
 	Reason  string // "5xx" | "latency" | "down"
-	Summary string // dòng tiêu đề, vd "5xx 12.4% over 5m (threshold 5%)"
-	Detail  string // dòng số liệu, vd "req/s 240 · p95 1.8s · upstream 3 err"
+	Summary string // headline line, e.g. "5xx 12.4% over 5m (threshold 5%)"
+	Detail  string // metrics line, e.g. "req/s 240 · p95 1.8s · upstream 3 err"
 }
 
-// siteState là trạng thái cảnh báo của một site giữa các lần Evaluate.
+// siteState is a site's alert state carried between Evaluate calls.
 type siteState struct {
-	pendingSince time.Time // lúc điều kiện xấu bắt đầu (zero = không pending)
+	pendingSince time.Time // when the bad condition started (zero = not pending)
 	firing       bool
-	lastFired    time.Time // để áp cooldown
+	lastFired    time.Time // for applying cooldown
 }
 
-// Alerter đánh giá sức khỏe site theo chu kỳ và phát Alert khi vào/ra trạng thái xấu.
-// Sustained ("for duration") + cooldown + hysteresis (ngưỡng ra = nửa ngưỡng vào) để
-// không bắn theo từng spike.
+// Alerter evaluates site health periodically and emits an Alert when entering/leaving a bad state.
+// Sustained ("for duration") + cooldown + hysteresis (exit threshold = half the entry threshold) so
+// it doesn't fire on every spike.
 type Alerter struct {
 	cfg AlertConfig
 
@@ -39,7 +39,7 @@ type Alerter struct {
 	states map[string]*siteState
 }
 
-// NewAlerter tạo alerter. Sustained/Cooldown <= 0 được đặt mặc định an toàn.
+// NewAlerter creates an alerter. Sustained/Cooldown <= 0 are set to safe defaults.
 func NewAlerter(cfg AlertConfig) *Alerter {
 	if cfg.Sustained <= 0 {
 		cfg.Sustained = 5 * time.Minute
@@ -50,7 +50,7 @@ func NewAlerter(cfg AlertConfig) *Alerter {
 	return &Alerter{cfg: cfg, states: make(map[string]*siteState)}
 }
 
-// Evaluate xét toàn bộ snapshot tại now và trả về các Alert cần gửi (firing + recovered).
+// Evaluate inspects the whole snapshot at now and returns the Alerts to send (firing + recovered).
 func (a *Alerter) Evaluate(stats []SiteStats, now time.Time) []Alert {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -67,7 +67,7 @@ func (a *Alerter) Evaluate(stats []SiteStats, now time.Time) []Alert {
 	return out
 }
 
-// evalSite chạy state machine cho một site.
+// evalSite runs the state machine for a single site.
 func (a *Alerter) evalSite(out []Alert, s SiteStats, st *siteState, now time.Time) []Alert {
 	reason, summary, bad := a.condition(s, st.firing)
 
@@ -83,18 +83,18 @@ func (a *Alerter) evalSite(out []Alert, s SiteStats, st *siteState, now time.Tim
 		return out
 	}
 
-	// Điều kiện xấu đang đúng.
+	// The bad condition currently holds.
 	if st.firing {
-		return out // đã báo rồi, chờ hồi phục (không spam)
+		return out // already alerted, wait for recovery (no spam)
 	}
 	if st.pendingSince.IsZero() {
 		st.pendingSince = now
 	}
 	if now.Sub(st.pendingSince) < a.cfg.Sustained {
-		return out // chưa đủ "sustained"
+		return out // not yet "sustained" long enough
 	}
 	if !st.lastFired.IsZero() && now.Sub(st.lastFired) < a.cfg.Cooldown {
-		return out // còn trong cooldown
+		return out // still within cooldown
 	}
 	st.firing = true
 	st.lastFired = now
@@ -105,8 +105,8 @@ func (a *Alerter) evalSite(out []Alert, s SiteStats, st *siteState, now time.Tim
 	return out
 }
 
-// condition trả về (reason, summary, bad). firing=true → dùng ngưỡng RA (nới lỏng, nửa
-// ngưỡng vào) để có hysteresis: đã báo thì chỉ coi là hết xấu khi rớt rõ dưới ngưỡng.
+// condition returns (reason, summary, bad). firing=true → use the EXIT threshold (relaxed, half the
+// entry threshold) for hysteresis: once alerting, only consider it cleared when it drops well below the threshold.
 func (a *Alerter) condition(s SiteStats, firing bool) (reason, summary string, bad bool) {
 	th := a.cfg.Thresholds
 	errLimit := th.Err5xxRatio
@@ -116,7 +116,7 @@ func (a *Alerter) condition(s SiteStats, firing bool) (reason, summary string, b
 		p95Limit /= 2
 	}
 
-	// Down ưu tiên cao nhất.
+	// Down has the highest priority.
 	if s.Status == "Down" {
 		return "down", fmt.Sprintf("Site down — no requests reaching %s", s.Host), true
 	}
@@ -149,7 +149,7 @@ func detailLine(s SiteStats) string {
 	return d
 }
 
-// humanLatency hiển thị giây dưới dạng dễ đọc: "820ms" hoặc "1.8s".
+// humanLatency renders seconds in a readable form: "820ms" or "1.8s".
 func humanLatency(sec float64) string {
 	if sec < 1 {
 		return fmt.Sprintf("%dms", int(sec*1000+0.5))

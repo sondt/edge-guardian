@@ -19,7 +19,7 @@ import (
 
 const lineRegex = `^(?P<ip>\S+) \S+ \S+ \[[^\]]+\] "(?:\S+) (?P<uri>\S+)[^"]*" `
 
-// fakeEnforcer ghi lại các lời gọi Ban/Unban.
+// fakeEnforcer records Ban/Unban calls.
 type fakeEnforcer struct {
 	mu       sync.Mutex
 	bans     []netip.Addr
@@ -54,7 +54,7 @@ func (f *fakeEnforcer) banCount() int {
 	return len(f.bans)
 }
 
-// fakeNotifier đếm số thông báo.
+// fakeNotifier counts notifications.
 type fakeNotifier struct {
 	mu           sync.Mutex
 	events       []notify.Event

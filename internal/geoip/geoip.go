@@ -1,16 +1,16 @@
-// Package geoip giải IP nguồn (của attacker) thành thông tin vị trí (quốc gia/tỉnh/
-// thành) và mạng (ASN/ISP) HOÀN TOÀN OFFLINE từ file MMDB (định dạng MaxMind), để làm
-// giàu thông báo ban và dashboard. KHÔNG gọi API địa lý ngoài.
+// Package geoip resolves source IPs (of attackers) into location info (country/region/
+// city) and network info (ASN/ISP) FULLY OFFLINE from MMDB files (MaxMind format), to
+// enrich ban notifications and the dashboard. It does NOT call external geolocation APIs.
 //
-// Nguồn dữ liệu khuyến nghị: bộ City + ASN MMDB miễn phí, giấy phép CC của
-// "sapics/ip-location-db" (tương thích định dạng MaxMind). Bộ City của sapics CHỈ phát
-// hành tách rời IPv4 và IPv6 (không có file gộp), nên mỗi tham số đường dẫn nhận DANH
-// SÁCH file ngăn cách bằng dấu phẩy — ví dụ trỏ cả
-// "dbip-city-ipv4.mmdb,dbip-city-ipv6.mmdb" để phủ cả hai họ địa chỉ. Lookup tra lần
-// lượt từng reader tới khi có file chứa IP đó.
+// Recommended data source: the free CC-licensed City + ASN MMDB sets from
+// "sapics/ip-location-db" (MaxMind-format compatible). The sapics City set is ONLY
+// published as separate IPv4 and IPv6 files (no combined file), so each path parameter
+// accepts a comma-separated LIST of files — for example pointing to both
+// "dbip-city-ipv4.mmdb,dbip-city-ipv6.mmdb" to cover both address families. Lookup queries
+// each reader in turn until a file contains that IP.
 //
-// Resolver luôn AN TOÀN khi suy biến: thiếu file / đường dẫn rỗng / file hỏng → no-op
-// trả Result rỗng. Lookup KHÔNG bao giờ trả lỗi và nil-safe.
+// The Resolver always degrades SAFELY: missing file / empty path / corrupt file → no-op
+// returning an empty Result. Lookup NEVER returns an error and is nil-safe.
 package geoip
 
 import (
@@ -21,14 +21,14 @@ import (
 	maxminddb "github.com/oschwald/maxminddb-golang"
 )
 
-// LƯU Ý KỸ THUẬT: dùng maxminddb-golang ĐỌC TRỰC TIẾP thay vì geoip2-golang. Lý do:
-// file mmdb của sapics/ip-location-db đặt metadata `database_type` phi chuẩn ("city ipv4",
-// "asn ipv4") khiến geoip2-golang chặn ở method .City()/.ASN() ("reader does not support
-// the X database type") DÙ dữ liệu bên trong vẫn theo schema MaxMind. Đọc thẳng bằng
-// maxminddb.Lookup vào struct schema-MaxMind bỏ qua được guard đó → chạy với CẢ file sapics
-// LẪN file MaxMind/DB-IP chuẩn.
+// TECHNICAL NOTE: we use maxminddb-golang to READ DIRECTLY instead of geoip2-golang. Reason:
+// sapics/ip-location-db mmdb files set a non-standard `database_type` metadata ("city ipv4",
+// "asn ipv4") which makes geoip2-golang block at the .City()/.ASN() methods ("reader does not
+// support the X database type") EVEN THOUGH the data inside still follows the MaxMind schema.
+// Reading directly via maxminddb.Lookup into a MaxMind-schema struct bypasses that guard → it
+// works with BOTH sapics files AND standard MaxMind/DB-IP files.
 
-// mmCity là phần schema MaxMind/DB-IP LỒNG cần lấy từ City DB.
+// mmCity is the NESTED MaxMind/DB-IP schema portion to extract from the City DB.
 type mmCity struct {
 	Country struct {
 		ISOCode string            `maxminddb:"iso_code"`
@@ -51,39 +51,39 @@ type mmCity struct {
 	} `maxminddb:"traits"`
 }
 
-// mmCityFlat là schema PHẲNG của sapics/ip-location-db dbip-city (country_code/city/
-// state1/…). Khác hẳn schema LỒNG của MaxMind — file sapics dùng cái này.
+// mmCityFlat is the FLAT schema of sapics/ip-location-db dbip-city (country_code/city/
+// state1/…). Completely different from MaxMind's NESTED schema — sapics files use this one.
 type mmCityFlat struct {
-	CountryCode string  `maxminddb:"country_code"` // mã ISO (vd "VN","US")
+	CountryCode string  `maxminddb:"country_code"` // ISO code (e.g. "VN","US")
 	City        string  `maxminddb:"city"`
-	State1      string  `maxminddb:"state1"` // tỉnh/bang
-	State2      string  `maxminddb:"state2"` // quận/huyện (nếu có)
+	State1      string  `maxminddb:"state1"` // province/state
+	State2      string  `maxminddb:"state2"` // district/county (if any)
 	Latitude    float64 `maxminddb:"latitude"`
 	Longitude   float64 `maxminddb:"longitude"`
 }
 
-// mmASN là phần schema cần lấy từ ASN DB.
+// mmASN is the schema portion to extract from the ASN DB.
 type mmASN struct {
 	AutonomousSystemNumber       uint   `maxminddb:"autonomous_system_number"`
 	AutonomousSystemOrganization string `maxminddb:"autonomous_system_organization"`
 }
 
-// Result là thông tin giải được cho một IP. Trường rỗng = không xác định.
-// IsInternal=true cho IP nội bộ (private/loopback/link-local) — không tra DB.
+// Result is the info resolved for an IP. An empty field = unknown.
+// IsInternal=true for internal IPs (private/loopback/link-local) — not looked up in the DB.
 type Result struct {
-	Country    string  // tên quốc gia (ưu tiên) hoặc mã ISO. Vd "Việt Nam" / "VN".
-	Region     string  // tỉnh/thành (subdivision).
-	City       string  // thành phố/quận.
-	Lat        float64 // vĩ độ xấp xỉ mức thành phố.
-	Lon        float64 // kinh độ xấp xỉ mức thành phố.
-	ASN        int     // số hệ thống tự trị. 0 = không xác định.
-	Org        string  // tên ISP/tổ chức. Vd "Viettel Group".
-	IsHosting  bool    // cờ datacenter/hosting/VPN (best-effort) — attacker hay đến từ đây.
-	IsInternal bool    // IP nội bộ (private/loopback/link-local).
+	Country    string  // country name (preferred) or ISO code. E.g. "Vietnam" / "VN".
+	Region     string  // province/region (subdivision).
+	City       string  // city/district.
+	Lat        float64 // approximate city-level latitude.
+	Lon        float64 // approximate city-level longitude.
+	ASN        int     // autonomous system number. 0 = unknown.
+	Org        string  // ISP/organization name. E.g. "Viettel Group".
+	IsHosting  bool    // datacenter/hosting/VPN flag (best-effort) — attackers often come from here.
+	IsInternal bool    // internal IP (private/loopback/link-local).
 }
 
-// ASNLabel định dạng ASN + tổ chức thành nhãn ngắn: "AS24940 Hetzner" / "AS24940" /
-// "Hetzner" / "" (không xác định).
+// ASNLabel formats ASN + organization into a short label: "AS24940 Hetzner" / "AS24940" /
+// "Hetzner" / "" (unknown).
 func (r Result) ASNLabel() string {
 	switch {
 	case r.ASN != 0 && r.Org != "":
@@ -95,21 +95,20 @@ func (r Result) ASNLabel() string {
 	}
 }
 
-// Nop là resolver no-op (mọi Lookup trả Result rỗng). Dùng khi tắt GeoIP.
+// Nop is a no-op resolver (every Lookup returns an empty Result). Used when GeoIP is disabled.
 type Nop struct{}
 
-// Lookup trên Nop luôn trả Result rỗng.
+// Lookup on Nop always returns an empty Result.
 func (Nop) Lookup(string) Result { return Result{} }
 
-// Resolver tra cứu vị trí + mạng cho một IP. Con trỏ nil = no-op (an toàn khi chưa wire).
-// Mỗi loại giữ DANH SÁCH reader (để phủ file IPv4 + IPv6 tách rời).
+// Resolver looks up location + network for an IP. A nil pointer = no-op (safe when not yet wired).
+// Each kind keeps a LIST of readers (to cover separate IPv4 + IPv6 files).
 type Resolver struct {
 	city []*maxminddb.Reader
 	asn  []*maxminddb.Reader
 }
 
-// splitPaths tách chuỗi đường dẫn ngăn cách bằng dấu phẩy thành danh sách đã trim,
-// bỏ phần tử rỗng.
+// splitPaths splits a comma-separated path string into a trimmed list, dropping empty elements.
 func splitPaths(s string) []string {
 	var out []string
 	for p := range strings.SplitSeq(s, ",") {
@@ -120,10 +119,11 @@ func splitPaths(s string) []string {
 	return out
 }
 
-// New mở các reader MMDB. Mỗi tham số là một DANH SÁCH file ngăn cách bằng dấu phẩy
-// (để phủ IPv4 + IPv6 tách rời); rỗng → bỏ qua loại tương ứng. File thiếu/không đọc
-// được → trả lỗi NHƯNG giữ lại các reader đã mở (caller nên log cảnh báo rồi tiếp tục).
-// Trả về *Resolver luôn KHÁC nil ngay cả khi mọi đường dẫn rỗng (no-op thuần).
+// New opens the MMDB readers. Each parameter is a comma-separated LIST of files
+// (to cover separate IPv4 + IPv6); empty → skip the corresponding kind. A missing/unreadable
+// file → returns an error BUT keeps the already-opened readers (the caller should log a
+// warning and continue). Returns a *Resolver that is always non-nil even when all paths are
+// empty (pure no-op).
 func New(cityDBPaths, asnDBPaths string) (*Resolver, error) {
 	r := &Resolver{}
 	for _, p := range splitPaths(cityDBPaths) {
@@ -143,7 +143,7 @@ func New(cityDBPaths, asnDBPaths string) (*Resolver, error) {
 	return r, nil
 }
 
-// Stats trả số reader City/ASN đã mở thành công — để log chẩn đoán lúc khởi động. nil-safe.
+// Stats returns the number of successfully opened City/ASN readers — for diagnostic logging at startup. nil-safe.
 func (r *Resolver) Stats() (city, asn int) {
 	if r == nil {
 		return 0, 0
@@ -151,7 +151,7 @@ func (r *Resolver) Stats() (city, asn int) {
 	return len(r.city), len(r.asn)
 }
 
-// Close đóng mọi reader đang mở. nil-safe. Trả error để khớp interface io.Closer-style.
+// Close closes every open reader. nil-safe. Returns an error to match the io.Closer-style interface.
 func (r *Resolver) Close() error {
 	if r == nil {
 		return nil
@@ -165,9 +165,9 @@ func (r *Resolver) Close() error {
 	return nil
 }
 
-// Lookup giải một IP (chuỗi) thành Result. KHÔNG bao giờ trả lỗi: IP rác → Result rỗng;
-// IP nội bộ → IsInternal=true (không tra DB); thiếu reader → phần tương ứng để rỗng.
-// nil-safe.
+// Lookup resolves an IP (string) into a Result. NEVER returns an error: a garbage IP → empty
+// Result; an internal IP → IsInternal=true (not looked up in the DB); a missing reader → the
+// corresponding part is left empty. nil-safe.
 func (r *Resolver) Lookup(ipStr string) Result {
 	if r == nil {
 		return Result{}
@@ -193,8 +193,8 @@ func (r *Resolver) fillCity(ip net.IP, res *Result) {
 	}
 }
 
-// applyCity thử decode 1 reader theo CẢ HAI schema: sapics PHẲNG trước, rồi MaxMind LỒNG.
-// Trả true nếu lấy được quốc gia.
+// applyCity tries to decode one reader against BOTH schemas: the FLAT sapics one first, then
+// the NESTED MaxMind one. Returns true if a country was obtained.
 func applyCity(rd *maxminddb.Reader, ip net.IP, res *Result) bool {
 	var f mmCityFlat
 	if err := rd.Lookup(ip, &f); err == nil && f.CountryCode != "" {
@@ -251,7 +251,7 @@ func firstNonEmpty(a, b string) string {
 	return b
 }
 
-// pickName ưu tiên tên tiếng Anh → bất kỳ tên nào → fallback (mã ISO).
+// pickName prefers the English name → any name → fallback (ISO code).
 func pickName(names map[string]string, fallback string) string {
 	if names != nil {
 		if v := strings.TrimSpace(names["en"]); v != "" {
@@ -266,7 +266,7 @@ func pickName(names map[string]string, fallback string) string {
 	return fallback
 }
 
-// hostingKeywords gợi ý tổ chức là datacenter/hosting/VPN/cloud (fallback best-effort).
+// hostingKeywords hint that an organization is a datacenter/hosting/VPN/cloud (best-effort fallback).
 var hostingKeywords = []string{
 	"hosting", "host", "data center", "datacenter", "data-center",
 	"cloud", "vps", "server", "colocation", "colo", "vpn", "proxy",
@@ -287,7 +287,7 @@ func looksLikeHosting(org string) bool {
 	return false
 }
 
-// privateNets là các dải IP nội bộ. IP thuộc các dải này được gắn IsInternal, KHÔNG tra DB.
+// privateNets are the internal IP ranges. IPs in these ranges are marked IsInternal and NOT looked up in the DB.
 var privateNets = func() []*net.IPNet {
 	cidrs := []string{
 		"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",

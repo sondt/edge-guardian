@@ -1,24 +1,24 @@
-// Package allow triển khai allowlist CIDR — tuyến phòng vệ chống tự khóa mình ra ngoài.
+// Package allow implements a CIDR allowlist — a line of defense against locking yourself out.
 package allow
 
 import (
 	"net/netip"
 )
 
-// List là danh sách prefix bất biến; kiểm tra một IP có được miễn ban không.
+// List is an immutable list of prefixes; checks whether an IP is exempt from banning.
 type List struct {
 	prefixes []netip.Prefix
 }
 
-// New tạo allowlist từ các prefix đã parse.
+// New creates an allowlist from the parsed prefixes.
 func New(prefixes []netip.Prefix) *List {
 	cp := make([]netip.Prefix, len(prefixes))
 	copy(cp, prefixes)
 	return &List{prefixes: cp}
 }
 
-// Contains trả về true nếu addr nằm trong bất kỳ prefix nào.
-// addr không hợp lệ được coi là KHÔNG nằm trong allowlist (caller tự xử lý).
+// Contains returns true if addr falls within any prefix.
+// An invalid addr is treated as NOT in the allowlist (the caller handles it).
 func (l *List) Contains(addr netip.Addr) bool {
 	if !addr.IsValid() {
 		return false
@@ -32,8 +32,8 @@ func (l *List) Contains(addr netip.Addr) bool {
 	return false
 }
 
-// ContainsString tiện ích: parse chuỗi IP rồi kiểm tra.
-// Trả về (false, false) nếu chuỗi không phải IP hợp lệ.
+// ContainsString is a convenience: parse the IP string then check it.
+// Returns (false, false) if the string is not a valid IP.
 func (l *List) ContainsString(ip string) (allowed bool, valid bool) {
 	addr, err := netip.ParseAddr(ip)
 	if err != nil {
