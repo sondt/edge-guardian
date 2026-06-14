@@ -22,3 +22,11 @@ coverage.out
 
 # Internal design docs — kept local, not published to the public repo
 /docs/
+
+# Internal marketing drafts — keep local, not published
+landing/BLOG-why.md
+landing/GEO-AUDIT.md
+landing/REDDIT.md
+landing/SHOW-HN.md
+landing/SHOW-HN.vi.md
+landing/README.md
