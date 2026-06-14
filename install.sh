@@ -37,25 +37,45 @@ esac
 
 log "Installing edge-guardian ($ARCH)…"
 
-# 1) Binary.
+# fetch <url> <dest> — download with curl or wget.
+fetch() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$1" -o "$2"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$2" "$1"
+  else
+    die "need curl or wget to download"
+  fi
+}
+
+# 1) Binary. Release assets are GoReleaser tarballs named
+#    edge-guardian_<version>_linux_<arch>.tar.gz with the binary at the archive root.
 if [ -n "${EDGEGUARD_BINARY:-}" ]; then
   log "Using local binary: $EDGEGUARD_BINARY"
   install -m 0755 "$EDGEGUARD_BINARY" "$BIN_DIR/edge-guardian"
 else
+  # Resolve the release tag (e.g. v0.2.0). "latest" → ask the GitHub API.
   if [ "$VERSION" = "latest" ]; then
-    URL="https://github.com/$REPO/releases/latest/download/edge-guardian-linux-$ARCH"
+    api="$(mktemp)"
+    fetch "https://api.github.com/repos/$REPO/releases/latest" "$api" \
+      || die "could not query the latest release"
+    TAG="$(sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$api" | head -n1)"
+    rm -f "$api"
+    [ -n "$TAG" ] || die "could not resolve the latest release tag"
   else
-    URL="https://github.com/$REPO/releases/download/$VERSION/edge-guardian-linux-$ARCH"
+    TAG="$VERSION"
   fi
+  VER="${TAG#v}"   # GoReleaser asset names drop the leading 'v'
+  ASSET="edge-guardian_${VER}_linux_${ARCH}.tar.gz"
+  URL="https://github.com/$REPO/releases/download/$TAG/$ASSET"
+
   log "Downloading $URL"
-  tmp="$(mktemp)"
-  if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$URL" -o "$tmp" || die "download failed ($URL)"
-  else
-    wget -qO "$tmp" "$URL" || die "download failed ($URL)"
-  fi
-  install -m 0755 "$tmp" "$BIN_DIR/edge-guardian"
-  rm -f "$tmp"
+  tmpd="$(mktemp -d)"
+  fetch "$URL" "$tmpd/eg.tar.gz" || die "download failed ($URL)"
+  tar -xzf "$tmpd/eg.tar.gz" -C "$tmpd" edge-guardian \
+    || die "archive did not contain the edge-guardian binary"
+  install -m 0755 "$tmpd/edge-guardian" "$BIN_DIR/edge-guardian"
+  rm -rf "$tmpd"
 fi
 "$BIN_DIR/edge-guardian" --version || die "installed binary does not run"
 
