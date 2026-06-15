@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="de" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Edge Guardian — calm until something happens · security + edge health for Linux, one binary</title>
-<meta name="description" content="Edge Guardian is a free, open-source, single-binary edge guardian for Linux. It detects scanners, brute-force and exploits from your logs and bans the source IPs at the nftables firewall — and watches each site's health (5xx, latency, traffic), alerting you the moment something degrades. Built-in dashboard. One line to install.">
+<title>Edge Guardian — ruhig, bis etwas passiert · Sicherheit + Edge-Health für Linux, eine Binärdatei</title>
+<meta name="description" content="Edge Guardian ist ein kostenloser, quelloffener Edge-Guardian für Linux in einer einzigen Binärdatei. Er erkennt Scanner, Brute-Force und Exploits in deinen Logs und sperrt die Quell-IPs an der nftables-Firewall — und überwacht zugleich die Health jeder Site (5xx, Latenz, Traffic) und alarmiert dich, sobald etwas schlechter wird. Integriertes Dashboard. Eine Zeile zur Installation.">
 <meta name="theme-color" content="#F6F7F9">
 <meta name="author" content="Giai Phap Moi Pro">
 <meta name="robots" content="index, follow, max-image-preview:large">
@@ -21,7 +21,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Social / Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Edge Guardian — calm until something happens">
+<meta property="og:title" content="Edge Guardian — ruhig, bis etwas passiert">
 <meta property="og:description" content="Single-binary edge guardian for Linux. Bans scanners, brute-force & exploits at the firewall, watches each site's health (5xx / latency / traffic), and alerts in real time — free. One line to install.">
 <meta property="og:url" content="https://github.com/sondt/edge-guardian">
 <meta property="og:site_name" content="Edge Guardian">
@@ -29,7 +29,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Edge Guardian — calm until something happens">
+<meta name="twitter:title" content="Edge Guardian — ruhig, bis etwas passiert">
 <meta name="twitter:description" content="Single-binary edge guardian for Linux. Bans scanners, brute-force & exploits at the firewall, watches site health, alerts in real time — free.">
 <meta name="twitter:image" content="og.png">
 
@@ -82,22 +82,22 @@
       "mainEntity": [
         {
           "@type": "Question",
-          "name": "What is Edge Guardian?",
+          "name": "Was ist Edge Guardian?",
           "acceptedAnswer": { "@type": "Answer", "text": "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one log tail it does two things: security (detect scanners, brute-force and exploits, then ban the source IPs at the nftables firewall) and edge health (watch each site's 5xx ratio, latency and request rate, and alert when a site is degraded or down). It alerts via Telegram or email and ships with a built-in local dashboard." }
         },
         {
           "@type": "Question",
-          "name": "How is Edge Guardian different from fail2ban and CrowdSec?",
+          "name": "Wie unterscheidet sich Edge Guardian von fail2ban und CrowdSec?",
           "acceptedAnswer": { "@type": "Answer", "text": "fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections, and its dashboard is a paid feature. Edge Guardian is a single static binary with a one-line install, a dashboard included free, and it also monitors site health — not just security." }
         },
         {
           "@type": "Question",
-          "name": "Is Edge Guardian free?",
+          "name": "Ist Edge Guardian kostenlos?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. Edge Guardian is free and open source under the Apache-2.0 license, including the dashboard and the health monitoring." }
         },
         {
           "@type": "Question",
-          "name": "What does Edge Guardian need to run?",
+          "name": "Was braucht Edge Guardian zum Laufen?",
           "acceptedAnswer": { "@type": "Answer", "text": "A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required." }
         },
         {
@@ -112,7 +112,7 @@
         },
         {
           "@type": "Question",
-          "name": "How do I install Edge Guardian?",
+          "name": "Wie installiere ich Edge Guardian?",
           "acceptedAnswer": { "@type": "Answer", "text": "Run the one-line installer (curl -fsSL .../install.sh | sudo bash), install the .deb or .rpm package, or run the Docker image. Edge Guardian starts in dry-run mode so it observes and alerts before it blocks." }
         }
       ]
@@ -395,10 +395,10 @@ section{position:relative}
 <header class="nav"><div class="wrap nav__in">
   <a class="brand" href="#top"><span class="brand__mark">&#9651;</span> Edge Guardian</a>
   <nav class="nav__links">
-    <a href="#why">Why</a><a href="#features">Features</a><a href="#how">How it works</a>
-    <a href="#dashboard">Dashboard</a><a href="#install">Install</a>
+    <a href="#why">Warum</a><a href="#features">Funktionen</a><a href="#how">So funktioniert's</a>
+    <a href="#dashboard">Dashboard</a><a href="#install">Installieren</a>
   </nav>
-  <div class="lang-switch" aria-label="Language" style="display:flex;gap:10px;align-items:center;font-size:13px;font-weight:500;margin-right:4px"><span aria-current="true" style="color:var(--ink)">EN</span><a href="/fr/" hreflang="fr" style="color:var(--muted)">FR</a><a href="/de/" hreflang="de" style="color:var(--muted)">DE</a><a href="/es/" hreflang="es" style="color:var(--muted)">ES</a><a href="/zh/" hreflang="zh" style="color:var(--muted)">中文</a><a href="/vi/" hreflang="vi" style="color:var(--muted)">Tiếng Việt</a></div>
+  <div class="lang-switch" aria-label="Language" style="display:flex;gap:10px;align-items:center;font-size:13px;font-weight:500;margin-right:4px"><a href="/" hreflang="en" style="color:var(--muted)">EN</a><a href="/fr/" hreflang="fr" style="color:var(--muted)">FR</a><span aria-current="true" style="color:var(--ink)">DE</span><a href="/es/" hreflang="es" style="color:var(--muted)">ES</a><a href="/zh/" hreflang="zh" style="color:var(--muted)">中文</a><a href="/vi/" hreflang="vi" style="color:var(--muted)">Tiếng Việt</a></div>
   <a class="nav__cta" href="https://github.com/sondt/edge-guardian">GitHub &#8599;</a>
 </div></header>
 
@@ -406,22 +406,22 @@ section{position:relative}
 <a id="top"></a>
 <!-- HERO -->
 <section class="hero"><div class="wrap">
-  <div class="eyebrow">Single&#8209;binary edge guardian &middot; security + site health &middot; Linux &middot; nftables</div>
-  <h1><span>Calm until</span> <span>something&nbsp;happens.</span></h1>
-  <p class="hero__sub">Edge Guardian reads your logs to do two things: <b>ban the bad traffic</b> — scanners, brute&#8209;force, exploits — at the firewall, and <b>watch each site's health</b> (5xx, latency, traffic), alerting the moment something degrades. A dashboard ships <b>free</b>. <b>One static binary.</b> One line to install.</p>
+  <div class="eyebrow">Edge-Guardian als einzelne Binärdatei &middot; Sicherheit + Site-Health &middot; Linux &middot; nftables</div>
+  <h1><span>Ruhig, bis</span> <span>etwas&nbsp;passiert.</span></h1>
+  <p class="hero__sub">Edge Guardian liest deine Logs für zwei Dinge: <b>schlechten Traffic sperren</b> — Scanner, Brute-Force, Exploits — an der Firewall, und <b>die Health jeder Site überwachen</b> (5xx, Latenz, Traffic), mit Alarm, sobald etwas schlechter wird. Ein Dashboard ist <b>kostenlos</b> dabei. <b>Eine statische Binärdatei.</b> Eine Zeile zur Installation.</p>
   <div class="hero__cta">
     <div class="cmd">
       <span class="cmd__prompt">$</span>
       <span class="cmd__txt" id="cmd">curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash</span>
       <button class="cmd__copy" data-copy="curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash">copy</button>
     </div>
-    <a class="btn-ghost" href="https://github.com/sondt/edge-guardian">Star on GitHub &#9733;</a>
+    <a class="btn-ghost" href="https://github.com/sondt/edge-guardian">Auf GitHub starren &#9733;</a>
   </div>
 
   <!-- SIGNATURE: the Sentinel line -->
   <div class="sentinel" aria-hidden="true">
-    <div class="sentinel__label">Sentinel &middot; live exposure</div>
-    <div class="sentinel__read"><span>banned <b>142</b></span><span>events/24h <b>1,883</b></span></div>
+    <div class="sentinel__label">Sentinel &middot; Live-Exposition</div>
+    <div class="sentinel__read"><span>gesperrt <b>142</b></span><span>Ereignisse/24h <b>1.883</b></span></div>
     <div class="sentinel__base"></div>
     <div class="sentinel__fade sentinel__fade--l"></div>
     <div class="sentinel__fade sentinel__fade--r"></div>
@@ -429,20 +429,20 @@ section{position:relative}
   </div>
 
   <div class="trust">
-    <span>&#9651; <b>single static binary</b></span>
-    <span>&#9651; no database, no agent</span>
-    <span>&#9651; nftables native</span>
-    <span>&#9651; dry&#8209;run safe start</span>
-    <span>&#9651; Apache&#8209;2.0</span>
+    <span>&#9651; <b>eine statische Binärdatei</b></span>
+    <span>&#9651; keine Datenbank, kein Agent</span>
+    <span>&#9651; nativ über nftables</span>
+    <span>&#9651; sicherer Start im Dry-Run</span>
+    <span>&#9651; Apache-2.0</span>
   </div>
 </div></section>
 
 <!-- PROBLEM -->
 <section class="sec problem" id="why"><div class="wrap">
   <div class="sec__head">
-    <div class="eyebrow">The problem</div>
-    <h2>Every public server is under constant fire.</h2>
-    <p class="sec__lead">The moment a box has an IP, bots start probing it — looking for forgotten admin panels, leaked secrets, and weak SSH passwords. The tools that fight back all make you choose between <em>too fiddly</em> and <em>too heavy</em>.</p>
+    <div class="eyebrow">Das Problem</div>
+    <h2>Jeder öffentliche Server steht ständig unter Beschuss.</h2>
+    <p class="sec__lead">Sobald eine Maschine eine IP hat, fangen Bots an, sie abzutasten — auf der Suche nach vergessenen Admin-Panels, geleakten Secrets und schwachen SSH-Passwörtern. Die Werkzeuge, die zurückschlagen, lassen dich alle zwischen <em>zu fummelig</em> und <em>zu schwer</em> wählen.</p>
   </div>
 
   <div class="probe-list">
@@ -456,23 +456,23 @@ section{position:relative}
   </div>
 
   <div class="versus">
-    <div class="card"><h3>fail2ban</h3><p>Lightweight and proven — but only sees one host, leans hard on regex rules, and gets awkward the moment you have more than one box. No dashboard.</p></div>
-    <div class="card"><h3>CrowdSec</h3><p>Powerful, with community blocklists — but you're learning an agent, a local API, a bouncer, and collections. And the pretty console? That's the paid part.</p></div>
+    <div class="card"><h3>fail2ban</h3><p>Leichtgewichtig und bewährt — sieht aber nur einen Host, stützt sich stark auf Regex-Regeln und wird umständlich, sobald du mehr als eine Maschine hast. Kein Dashboard.</p></div>
+    <div class="card"><h3>CrowdSec</h3><p>Mächtig, mit Community-Blocklisten — aber du lernst einen Agent, eine lokale API, einen Bouncer und Collections. Und die hübsche Konsole? Das ist der kostenpflichtige Teil.</p></div>
   </div>
 </div></section>
 
 <!-- WEDGE -->
 <section class="sec" style="border-top:1px solid var(--line)"><div class="wrap">
   <div class="sec__head">
-    <div class="eyebrow">Why Edge Guardian</div>
-    <h2>Two jobs, from one log tail.</h2>
-    <p class="sec__lead">The same stream that catches attackers also tells you when a site is in trouble. Block the bad traffic, and know the moment something breaks — without a second tool, a database, or an agent.</p>
+    <div class="eyebrow">Warum Edge Guardian</div>
+    <h2>Zwei Aufgaben aus einem Log-Stream.</h2>
+    <p class="sec__lead">Derselbe Stream, der Angreifer erwischt, sagt dir auch, wann eine Site in Schwierigkeiten ist. Blockiere den schlechten Traffic und wisse im selben Moment, wenn etwas kaputtgeht — ohne zweites Tool, Datenbank oder Agent.</p>
   </div>
   <div class="pillars" style="margin-top:34px">
     <div class="pillar">
       <div class="pillar__n">01</div>
-      <h3>Block the bad traffic.</h3>
-      <p>Scanners, brute&#8209;force, exploit probes and floods — matched against a sliding window and dropped at the kernel via nftables. Repeat offenders escalate.</p>
+      <h3>Schlechten Traffic blockieren.</h3>
+      <p>Scanner, Brute-Force, Exploit-Sonden und Floods — gegen ein gleitendes Fenster abgeglichen und im Kernel über nftables verworfen. Wiederholungstäter werden härter bestraft.</p>
       <ul>
         <li>HTTP scanners, SSH brute&#8209;force, exploit signatures, bad bots, rate&#8209;abuse, port scans &amp; honeypots</li>
         <li>nftables bans with auto&#8209;expiry; <b>escalating</b> punishment for repeat offenders</li>
@@ -482,8 +482,8 @@ section{position:relative}
     </div>
     <div class="pillar pillar--accent">
       <div class="pillar__n">02</div>
-      <h3>See when a site breaks.</h3>
-      <p>The same access log feeds a health view: per&#8209;site error rate, latency and traffic. It alerts when a site is degraded or down — and again when it recovers.</p>
+      <h3>Sehen, wann eine Site kaputtgeht.</h3>
+      <p>Dasselbe Access-Log speist eine Health-Ansicht: Fehlerrate, Latenz und Traffic pro Site. Es alarmiert, wenn eine Site beeinträchtigt oder ausgefallen ist — und erneut, wenn sie sich erholt.</p>
       <ul>
         <li><b>5xx ratio, p95 latency &amp; request rate</b> per site, on a <code>/sites</code> page</li>
         <li>Degraded / down / recovered alerts with sustained + cooldown — no spam</li>
@@ -498,24 +498,24 @@ section{position:relative}
 <section class="sec" id="features" style="border-top:1px solid var(--line)"><div class="wrap">
   <div class="sec__head">
     <div class="eyebrow">Detection &middot; enforcement &middot; health &middot; alerting</div>
-    <h2>Enough to actually run a server on.</h2>
+    <h2>Genug, um einen Server wirklich zu betreiben.</h2>
   </div>
   <div class="feat">
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; HTTP</div><h3>Scanner paths</h3><p>Regex on request URIs — the .php/.env/wp&#8209;login probes a clean stack never serves. Ban on the first hit.</p></div>
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; SSH</div><h3>Brute&#8209;force</h3><p>Counts failed logins from auth.log / journald. Injection&#8209;hardened so a crafted username can't frame an innocent IP.</p></div>
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; EXPLOIT</div><h3>Attack signatures</h3><p>SQLi, path traversal, RCE probes &amp; Log4Shell in the URI. Off by default, anchored to keep false positives near zero.</p></div>
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; BOTS</div><h3>Bad&#8209;bot UA</h3><p>Bans known scanner user&#8209;agents — sqlmap, nikto, nuclei, masscan, wpscan — that have no honest reason to call you.</p></div>
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; FLOOD</div><h3>Rate abuse</h3><p>Counts every request per IP and bans a DoS&#8209;lite flood. High&#8209;threshold and allowlist&#8209;aware so real clients pass.</p></div>
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; NETWORK</div><h3>Port scan</h3><p>Counts <em>distinct</em> destination ports per IP via nftables logging. Hammering one port isn't a scan; sweeping many is.</p></div>
-    <div class="feat__cell"><div class="feat__k">DETECT &middot; TRAP</div><h3>Honeypot ports</h3><p>Touch a decoy port, get banned instantly. The highest&#8209;quality signal there is — no legitimate reason to knock.</p></div>
-    <div class="feat__cell"><div class="feat__k">HEALTH</div><h3>Site health<span class="tag">new</span></h3><p>Per&#8209;site 5xx ratio, p95 latency &amp; request rate — sites discovered from <code>nginx&nbsp;-T</code>. Alerts on degraded / down / recovered, with a <code>/sites</code> view.</p></div>
-    <div class="feat__cell"><div class="feat__k">ENFORCE</div><h3>nftables bans<span class="tag">escalating</span></h3><p>Dropped at the kernel via a timeout set. Repeat offenders are punished harder: a day, a week, a month, forever.</p></div>
-    <div class="feat__cell"><div class="feat__k">INTEL</div><h3>Public blocklists</h3><p>Import FireHOL &amp; Spamhaus DROP into an nftables interval set — block known&#8209;bad ranges before they ever reach you.</p></div>
-    <div class="feat__cell"><div class="feat__k">ALERT</div><h3>Telegram &amp; Email</h3><p>Real&#8209;time on every ban <em>and</em> every health alert, to all channels at once. Email via Resend. Country &amp; ASN when GeoIP is on.</p></div>
-    <div class="feat__cell"><div class="feat__k">GEO</div><h3>Offline GeoIP</h3><p>Country, region &amp; ISP from local MMDB files — works with the <em>free</em> sapics databases, no MaxMind account.</p></div>
-    <div class="feat__cell"><div class="feat__k">SAFE</div><h3>Allowlist &amp; dry&#8209;run</h3><p>CIDR allowlist for your office, VPN &amp; monitoring. Dry&#8209;run to observe for days before you flip the switch.</p></div>
-    <div class="feat__cell"><div class="feat__k">HEALTH &middot; ERRORS</div><h3>Error log<span class="tag">new</span></h3><p>Every 4xx/5xx request in one place — host, path, status, IP, user&#8209;agent and GeoIP origin — filterable and paginated on a <code>/errors</code> page.</p></div>
-    <div class="feat__cell"><div class="feat__k">OPS</div><h3>Auto&#8209;update<span class="tag">new</span></h3><p>An optional systemd timer keeps the binary current from GitHub releases — binary&#8209;only, with a safe restart. Off by default.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; HTTP</div><h3>Scanner-Pfade</h3><p>Regex auf Request-URIs — die .php/.env/wp-login-Sonden, die ein sauberer Stack nie ausliefert. Sperre beim ersten Treffer.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; SSH</div><h3>Brute&#8209;force</h3><p>Zählt fehlgeschlagene Logins aus auth.log / journald. Injection-gehärtet, damit ein manipulierter Benutzername keine unschuldige IP belasten kann.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; EXPLOIT</div><h3>Angriffssignaturen</h3><p>SQLi, Path Traversal, RCE-Sonden &amp; Log4Shell in der URI. Standardmäßig aus, verankert, um False Positives nahe null zu halten.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; BOTS</div><h3>Bad&#8209;bot UA</h3><p>Sperrt bekannte Scanner-User-Agents — sqlmap, nikto, nuclei, masscan, wpscan — die keinen ehrlichen Grund haben, dich anzufragen.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; FLOOD</div><h3>Rate-Missbrauch</h3><p>Zählt jede Anfrage pro IP und sperrt einen DoS-Lite-Flood. Hochschwellig und Allowlist-bewusst, damit echte Clients durchkommen.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; NETWORK</div><h3>Portscan</h3><p>Zählt <em>verschiedene</em> Zielports pro IP über nftables-Logging. Auf einen Port hämmern ist kein Scan; viele abklappern schon.</p></div>
+    <div class="feat__cell"><div class="feat__k">DETECT &middot; TRAP</div><h3>Honeypot-Ports</h3><p>Berühre einen Köderport und wirst sofort gesperrt. Das hochwertigste Signal überhaupt — kein legitimer Grund anzuklopfen.</p></div>
+    <div class="feat__cell"><div class="feat__k">HEALTH</div><h3>Site health<span class="tag">new</span></h3><p>5xx-Quote, p95-Latenz &amp; Request-Rate pro Site — Sites werden aus <code>nginx&nbsp;-T</code> ermittelt. Alarme bei beeinträchtigt / ausgefallen / erholt, mit einer <code>/sites</code>-Ansicht.</p></div>
+    <div class="feat__cell"><div class="feat__k">ENFORCE</div><h3>nftables bans<span class="tag">escalating</span></h3><p>Im Kernel über ein Set mit Timeout verworfen. Wiederholungstäter werden härter bestraft: einen Tag, eine Woche, einen Monat, für immer.</p></div>
+    <div class="feat__cell"><div class="feat__k">INTEL</div><h3>Öffentliche Blocklisten</h3><p>Importiere FireHOL &amp; Spamhaus DROP in ein nftables-Interval-Set — blockiere bekannte böse Bereiche, bevor sie dich überhaupt erreichen.</p></div>
+    <div class="feat__cell"><div class="feat__k">ALERT</div><h3>Telegram &amp; E-Mail</h3><p>In Echtzeit bei jeder Sperre <em>und</em> jedem Health-Alarm, an alle Kanäle gleichzeitig. E-Mail über Resend. Land &amp; ASN, wenn GeoIP aktiv ist.</p></div>
+    <div class="feat__cell"><div class="feat__k">GEO</div><h3>Offline-GeoIP</h3><p>Land, Region &amp; ISP aus lokalen MMDB-Dateien — funktioniert mit den <em>kostenlosen</em> sapics-Datenbanken, ohne MaxMind-Konto.</p></div>
+    <div class="feat__cell"><div class="feat__k">SAFE</div><h3>Allowlist &amp; dry&#8209;run</h3><p>CIDR-Allowlist für Büro, VPN &amp; Monitoring. Dry-Run, um tagelang zu beobachten, bevor du scharf schaltest.</p></div>
+    <div class="feat__cell"><div class="feat__k">HEALTH &middot; ERRORS</div><h3>Error log<span class="tag">new</span></h3><p>Jede 4xx/5xx-Anfrage an einem Ort — Host, Pfad, Status, IP, User-Agent und GeoIP-Herkunft — filterbar und paginiert auf einer <code>/errors</code>-Seite.</p></div>
+    <div class="feat__cell"><div class="feat__k">OPS</div><h3>Auto&#8209;update<span class="tag">new</span></h3><p>Ein optionaler systemd-Timer hält die Binärdatei über GitHub-Releases aktuell — nur die Binärdatei, mit sicherem Neustart. Standardmäßig aus.</p></div>
   </div>
 </div></section>
 
@@ -523,15 +523,15 @@ section{position:relative}
 <section class="sec" id="how" style="border-top:1px solid var(--line)"><div class="wrap">
   <div class="sec__head">
     <div class="eyebrow">How it works</div>
-    <h2>One tail. Two branches.</h2>
-    <p class="sec__lead">Every line fans out twice: the <b>security</b> branch matches bad traffic and bans it; the <b>health</b> branch counts per&#8209;site status, latency and rate, and alerts on trouble. Adding a detector is a parser and a threshold — never a rewrite.</p>
+    <h2>Ein Stream. Zwei Zweige.</h2>
+    <p class="sec__lead">Jede Zeile fächert sich zweifach auf: der <b>Sicherheits</b>-Zweig erkennt schlechten Traffic und sperrt ihn; der <b>Health</b>-Zweig zählt Status, Latenz und Rate pro Site und alarmiert bei Problemen. Einen Detektor hinzufügen heißt: ein Parser und ein Schwellenwert — nie eine Neuimplementierung.</p>
   </div>
   <div class="flow">
-    <div class="flow__step"><div class="flow__n">01</div><h3>Tail</h3><p>nginx, sshd &amp; kernel logs — one read, fans out to both branches.</p></div>
-    <div class="flow__step"><div class="flow__n">02</div><h3>Detect</h3><p>Parse the source IP, match against a sliding window + threshold.</p></div>
-    <div class="flow__step"><div class="flow__n">03</div><h3>Allowlist?</h3><p>Your CIDRs are never touched. The last line of defense against self&#8209;lockout.</p></div>
-    <div class="flow__step flow__step--ban"><div class="flow__n">04</div><h3>Ban</h3><p>Add to the nftables set with a timeout. Dropped on every port, instantly.</p></div>
-    <div class="flow__step"><div class="flow__n">05</div><h3>Notify</h3><p>Bans <em>and</em> health alerts — Telegram, email, the dashboard feed &amp; Sentinel line.</p></div>
+    <div class="flow__step"><div class="flow__n">01</div><h3>Lesen</h3><p>nginx-, sshd- &amp; Kernel-Logs — einmal gelesen, an beide Zweige verteilt.</p></div>
+    <div class="flow__step"><div class="flow__n">02</div><h3>Erkennen</h3><p>Quell-IP parsen, gegen ein gleitendes Fenster + Schwellenwert abgleichen.</p></div>
+    <div class="flow__step"><div class="flow__n">03</div><h3>Allowlist?</h3><p>Deine CIDRs werden nie angetastet. Die letzte Verteidigungslinie gegen Selbstaussperrung.</p></div>
+    <div class="flow__step flow__step--ban"><div class="flow__n">04</div><h3>Sperren</h3><p>Dem nftables-Set mit Timeout hinzugefügt. Auf jedem Port verworfen, sofort.</p></div>
+    <div class="flow__step"><div class="flow__n">05</div><h3>Benachrichtigen</h3><p>Sperren <em>und</em> Health-Alarme — Telegram, E-Mail, der Dashboard-Feed &amp; die Sentinel-Linie.</p></div>
   </div>
 </div></section>
 
@@ -539,8 +539,8 @@ section{position:relative}
 <section class="sec show" id="dashboard"><div class="wrap">
   <div class="sec__head">
     <div class="eyebrow">The wedge</div>
-    <h2>See who's hitting you — and what's breaking.</h2>
-    <p class="show__lead">A calm instrument that stays quiet until it matters. When the Sentinel line spikes red, or a site turns <em>degraded</em>, it <em>means</em> something. This ships in the free binary — no Grafana, no paywall.</p>
+    <h2>Sieh, wer dich angreift — und was kaputtgeht.</h2>
+    <p class="show__lead">Ein ruhiges Instrument, das still bleibt, bis es zählt. Wenn die Sentinel-Linie rot ausschlägt oder eine Site <em>beeinträchtigt</em> wird, dann <em>bedeutet</em> das etwas. Im kostenlosen Binary enthalten — kein Grafana, keine Paywall.</p>
   </div>
 
   <div class="dash" aria-hidden="true">
@@ -576,20 +576,20 @@ section{position:relative}
 <section class="sec" id="install" style="border-top:1px solid var(--line)"><div class="wrap">
   <div class="sec__head">
     <div class="eyebrow">Install</div>
-    <h2>Up and watching in a minute.</h2>
-    <p class="sec__lead">Starts in dry&#8209;run, so it observes without blocking until you're ready. Then flip one line.</p>
+    <h2>In einer Minute aktiv und wachsam.</h2>
+    <p class="sec__lead">Startet im Dry-Run: beobachtet ohne zu blockieren, bis du bereit bist. Dann änderst du eine Zeile.</p>
   </div>
   <div class="install-grid">
     <div class="inst">
-      <h3><span class="d"></span> One line</h3>
-      <p>Detects your arch, installs the binary + systemd unit, and initializes nftables.</p>
+      <h3><span class="d"></span> Eine Zeile</h3>
+      <p>Erkennt deine Architektur, installiert die Binärdatei + systemd-Unit und initialisiert nftables.</p>
       <pre class="code"><span class="c"># Linux, needs nftables + root</span>
 curl -fsSL https://raw.githubusercontent.com/<wbr>sondt/edge-guardian/main/install.sh \
   | sudo bash</pre>
     </div>
     <div class="inst">
       <h3><span class="d"></span> .deb / .rpm</h3>
-      <p>Native packages for amd64 &amp; arm64. Config is a conffile — safe across upgrades.</p>
+      <p>Native Pakete für amd64 &amp; arm64. Die Config ist ein Conffile — sicher über Upgrades hinweg.</p>
       <pre class="code"><span class="c"># Debian / Ubuntu</span>
 sudo apt install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.deb
 <span class="c"># RHEL / Rocky / Fedora</span>
@@ -597,7 +597,7 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
     </div>
     <div class="inst">
       <h3><span class="d"></span> Docker</h3>
-      <p>Protects the host firewall via the host network namespace.</p>
+      <p>Schützt die Host-Firewall über den Netzwerk-Namespace des Hosts.</p>
       <pre class="code">docker run -d --name edge-guardian \
   --network host --cap-add NET_ADMIN \
   -v /etc/edge-guardian:/etc/edge-guardian \
@@ -608,7 +608,7 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
 
 <!-- COMPARE -->
 <section class="sec" style="border-top:1px solid var(--line)"><div class="wrap">
-  <div class="sec__head"><div class="eyebrow">In a glance</div><h2>How it stacks up.</h2></div>
+  <div class="sec__head"><div class="eyebrow">Auf einen Blick</div><h2>Wie es sich schlägt.</h2></div>
   <div class="cmp">
     <table>
       <thead><tr><th>&nbsp;</th><th class="us">Edge Guardian</th><th>fail2ban</th><th>CrowdSec</th></tr></thead>
@@ -629,34 +629,34 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
 
 <!-- FAQ -->
 <section class="sec faq" id="faq" style="border-top:1px solid var(--line)"><div class="wrap">
-  <div class="sec__head"><div class="eyebrow">Questions</div><h2>Straight answers.</h2></div>
+  <div class="sec__head"><div class="eyebrow">Fragen</div><h2>Klare Antworten.</h2></div>
   <div class="faq__list">
     <details class="qa" open>
-      <summary>What is Edge Guardian?</summary>
+      <summary>Was ist Edge Guardian?</summary>
       <p>Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one log tail it does two things: <b>security</b> — detect scanners, brute-force and exploits, then ban the source IPs at the nftables firewall — and <b>edge health</b> — watch each site's 5xx ratio, latency and request rate, and alert when a site is degraded or down. It alerts via Telegram or email and ships with a built-in local dashboard.</p>
     </details>
     <details class="qa">
-      <summary>How is Edge Guardian different from fail2ban and CrowdSec?</summary>
+      <summary>Wie unterscheidet sich Edge Guardian von fail2ban und CrowdSec?</summary>
       <p>fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections — and its dashboard is a paid feature. Edge Guardian is a single static binary with a one-line install, a dashboard included free, and it also monitors site health — not just security.</p>
     </details>
     <details class="qa">
-      <summary>What does Edge Guardian detect?</summary>
+      <summary>Was erkennt Edge Guardian?</summary>
       <p>HTTP scanner paths, SSH brute-force, exploit signatures (SQLi, path traversal, RCE probes, Log4Shell), bad bots by User-Agent (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite floods, port scans (distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus.</p>
     </details>
     <details class="qa">
-      <summary>Does it monitor site health, not just attacks?</summary>
+      <summary>Überwacht es die Site-Health, nicht nur Angriffe?</summary>
       <p>Yes. The same access log feeds a health branch that aggregates per-site status mix, 5xx error ratio, request rate and p95 latency, and alerts (with sustained + cooldown to avoid noise) when a site is degraded or down — and again when it recovers. It deliberately does <em>not</em> do web analytics: it answers “is anything wrong?”, not “who is viewing what?”.</p>
     </details>
     <details class="qa">
-      <summary>Is Edge Guardian free?</summary>
+      <summary>Ist Edge Guardian kostenlos?</summary>
       <p>Yes. Edge Guardian is free and open source under the Apache-2.0 license — including the dashboard and the health monitoring.</p>
     </details>
     <details class="qa">
-      <summary>What does Edge Guardian need to run?</summary>
+      <summary>Was braucht Edge Guardian zum Laufen?</summary>
       <p>A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required.</p>
     </details>
     <details class="qa">
-      <summary>How do I install Edge Guardian?</summary>
+      <summary>Wie installiere ich Edge Guardian?</summary>
       <p>Run the one-line installer (<code>curl -fsSL .../install.sh | sudo bash</code>), install the <code>.deb</code> or <code>.rpm</code> package, or run the Docker image. Edge Guardian starts in dry-run mode so it observes and alerts before it blocks.</p>
     </details>
   </div>
@@ -665,14 +665,14 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
 <!-- FINAL CTA -->
 <section class="sec final"><div class="wrap">
   <h2>Drop it on a box.<br>Forget about scanners.</h2>
-  <p>Free, open source, and built to stay out of your way until something actually happens.</p>
+  <p>Kostenlos, quelloffen und so gebaut, dass es dir nicht im Weg steht, bis wirklich etwas passiert.</p>
   <div class="hero__cta">
     <div class="cmd">
       <span class="cmd__prompt">$</span>
       <span class="cmd__txt">curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash</span>
       <button class="cmd__copy" data-copy="curl -fsSL https://raw.githubusercontent.com/sondt/edge-guardian/main/install.sh | sudo bash">copy</button>
     </div>
-    <a class="btn-ghost" href="https://github.com/sondt/edge-guardian">View source &#8599;</a>
+    <a class="btn-ghost" href="https://github.com/sondt/edge-guardian">Quellcode ansehen &#8599;</a>
   </div>
 </div></section>
 </main>
@@ -682,7 +682,7 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
   <div class="brand" style="font-size:16px"><span class="brand__mark" style="width:22px;height:22px;font-size:13px">&#9651;</span> Edge Guardian</div>
   <div class="foot__links">
     <a href="https://github.com/sondt/edge-guardian">GitHub</a>
-    <a href="#install">Install</a>
+    <a href="#install">Installieren</a>
     <a href="https://github.com/sondt/edge-guardian/blob/main/config.example.toml">Config</a>
   </div>
   <div>Apache&#8209;2.0 &middot; built in Go &middot; <span class="alert-text">calm until something happens</span></div>
