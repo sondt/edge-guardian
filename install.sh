@@ -37,12 +37,13 @@ esac
 
 log "Installing edge-guardian ($ARCH)…"
 
-# fetch <url> <dest> — download with curl or wget.
+# fetch <url> <dest> — download with curl or wget, retrying transient failures
+# (GitHub's CDN occasionally returns a 504/503 on release-asset downloads).
 fetch() {
   if command -v curl >/dev/null 2>&1; then
-    curl -fsSL "$1" -o "$2"
+    curl -fsSL --retry 5 --retry-delay 2 "$1" -o "$2"
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO "$2" "$1"
+    wget --tries=5 --waitretry=2 -qO "$2" "$1"
   else
     die "need curl or wget to download"
   fi
@@ -126,14 +127,20 @@ else
 fi
 
 # 4) Initialize nftables (table + sets + drop rules). Idempotent.
+#    MUST mirror setup-nftables.sh: blockset uses auto-merge (overlapping public-list
+#    ranges), and the input chain ALWAYS accepts loopback + established connections
+#    BEFORE any drop — without that, a blocked range overlapping loopback/LAN (or the
+#    host's own return traffic) is blackholed → 504 on every site.
 log "Initializing nftables table 'edge_guardian'…"
 nft list table inet edge_guardian >/dev/null 2>&1 || nft add table inet edge_guardian
 nft list set inet edge_guardian blocklist4 >/dev/null 2>&1 || nft add set inet edge_guardian blocklist4 '{ type ipv4_addr; flags timeout; }'
 nft list set inet edge_guardian blocklist6 >/dev/null 2>&1 || nft add set inet edge_guardian blocklist6 '{ type ipv6_addr; flags timeout; }'
-nft list set inet edge_guardian blockset4 >/dev/null 2>&1 || nft add set inet edge_guardian blockset4 '{ type ipv4_addr; flags interval; }'
-nft list set inet edge_guardian blockset6 >/dev/null 2>&1 || nft add set inet edge_guardian blockset6 '{ type ipv6_addr; flags interval; }'
+nft list set inet edge_guardian blockset4 >/dev/null 2>&1 || nft add set inet edge_guardian blockset4 '{ type ipv4_addr; flags interval; auto-merge; }'
+nft list set inet edge_guardian blockset6 >/dev/null 2>&1 || nft add set inet edge_guardian blockset6 '{ type ipv6_addr; flags interval; auto-merge; }'
 nft list chain inet edge_guardian input >/dev/null 2>&1 || nft add chain inet edge_guardian input '{ type filter hook input priority -10; policy accept; }'
 nft flush chain inet edge_guardian input
+nft add rule inet edge_guardian input iif lo accept
+nft add rule inet edge_guardian input ct state established,related accept
 nft add rule inet edge_guardian input ip saddr @blocklist4 drop
 nft add rule inet edge_guardian input ip6 saddr @blocklist6 drop
 nft add rule inet edge_guardian input ip saddr @blockset4 drop
