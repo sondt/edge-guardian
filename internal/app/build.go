@@ -197,6 +197,17 @@ func Build(cfg config.Config, logger *slog.Logger) (*Components, error) {
 	return &Components{App: application, Services: services, Cleanup: cleanup}, nil
 }
 
+// hostPath turns a parsed request into an absolute path for the ban reason — the host
+// prepended to the URI (e.g. "example.com/cgi-bin/login.cgi") when the log carries $host,
+// falling back to the bare path when it does not. Scheme is omitted: the access log does
+// not reliably record http vs https.
+func hostPath(ev parse.Event) string {
+	if ev.Host != "" {
+		return ev.Host + ev.URI
+	}
+	return ev.URI
+}
+
 // buildDetectors constructs the enabled detection sources and the union of log paths
 // to tail. HTTP scanner is always on; SSH brute-force is opt-in via [sshd].
 func buildDetectors(cfg config.Config) ([]*Detector, []string, error) {
@@ -220,7 +231,7 @@ func buildDetectors(cfg config.Config) ([]*Detector, []string, error) {
 			if !matched || !matcher.IsBad(ev.URI) {
 				return "", "", "", false
 			}
-			return ev.IP, "", ev.URI, true
+			return ev.IP, "", hostPath(ev), true
 		},
 	})
 	paths = append(paths, cfg.Log.Paths...)
@@ -241,7 +252,7 @@ func buildDetectors(cfg config.Config) ([]*Detector, []string, error) {
 				if !matched || !exMatcher.IsBad(ev.URI) {
 					return "", "", "", false
 				}
-				return ev.IP, "", "exploit signature: " + ev.URI, true
+				return ev.IP, "", "exploit signature: " + hostPath(ev), true
 			},
 		})
 		paths = append(paths, cfg.Log.Paths...)
