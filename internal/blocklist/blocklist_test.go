@@ -119,6 +119,53 @@ func TestFetchAll(t *testing.T) {
 	}
 }
 
+func TestCoalesce(t *testing.T) {
+	mk := func(ss ...string) []netip.Prefix {
+		out := make([]netip.Prefix, len(ss))
+		for i, s := range ss {
+			out[i] = netip.MustParsePrefix(s)
+		}
+		sortPrefixes(out)
+		return out
+	}
+	tests := []struct {
+		name     string
+		in, want []netip.Prefix
+	}{
+		{
+			// /24 nested in /16, /32 nested in /24 → only the broadest survives.
+			name: "drops nested",
+			in:   mk("1.2.3.4/32", "1.2.3.0/24", "1.2.0.0/16"),
+			want: mk("1.2.0.0/16"),
+		},
+		{
+			name: "keeps disjoint",
+			in:   mk("1.2.0.0/16", "9.9.9.0/24", "45.13.0.0/16"),
+			want: mk("1.2.0.0/16", "9.9.9.0/24", "45.13.0.0/16"),
+		},
+		{
+			// FireHOL-style overlap: aggregate /16 already covers a Spamhaus /24.
+			name: "mixed overlap and disjoint",
+			in:   mk("1.2.0.0/16", "1.2.5.0/24", "8.8.8.0/24"),
+			want: mk("1.2.0.0/16", "8.8.8.0/24"),
+		},
+		{name: "empty", in: nil, want: nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := coalesce(tt.in)
+			if len(got) != len(tt.want) {
+				t.Fatalf("coalesce len=%d want %d: %v", len(got), len(tt.want), got)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("coalesce[%d]=%v want %v (full: %v)", i, got[i], tt.want[i], got)
+				}
+			}
+		})
+	}
+}
+
 func TestFetchAll_BadSourceSkipped(t *testing.T) {
 	good := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("1.2.3.0/24\n"))

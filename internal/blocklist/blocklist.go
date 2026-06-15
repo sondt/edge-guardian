@@ -115,6 +115,8 @@ func FetchAll(ctx context.Context, client *http.Client, urls []string, allow exc
 	}
 	sortPrefixes(set.V4)
 	sortPrefixes(set.V6)
+	set.V4 = coalesce(set.V4)
+	set.V6 = coalesce(set.V6)
 	return set, errs
 }
 
@@ -125,4 +127,27 @@ func sortPrefixes(ps []netip.Prefix) {
 		}
 		return ps[i].Bits() < ps[j].Bits()
 	})
+}
+
+// coalesce removes prefixes that are fully contained within a broader prefix in the
+// same list. CIDR blocks are either nested or disjoint (they never partially overlap),
+// so dropping nested prefixes eliminates the "conflicting intervals specified" error
+// nftables raises when overlapping ranges are added to an interval set — which happens
+// because aggregate lists like FireHOL level1 already include narrower ranges from
+// other lists (e.g. Spamhaus DROP).
+//
+// The input MUST be sorted by (addr asc, bits asc) — sortPrefixes does this — so any
+// covering prefix always precedes the prefixes it contains. Filters in place.
+func coalesce(sorted []netip.Prefix) []netip.Prefix {
+	out := sorted[:0]
+	var umbrella netip.Prefix
+	have := false
+	for _, p := range sorted {
+		if have && umbrella.Bits() <= p.Bits() && umbrella.Contains(p.Addr()) {
+			continue // p is nested inside the current umbrella → drop it
+		}
+		out = append(out, p)
+		umbrella, have = p, true
+	}
+	return out
 }

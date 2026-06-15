@@ -25,11 +25,13 @@ nft list set inet "$TABLE" blocklist4 >/dev/null 2>&1 || \
 nft list set inet "$TABLE" blocklist6 >/dev/null 2>&1 || \
     nft add set inet "$TABLE" blocklist6 '{ type ipv6_addr; flags timeout; }'
 
-# Interval set cho blocklist công khai import (CIDR). flags interval để chứa dải.
+# Interval set cho blocklist công khai import (CIDR). flags interval để chứa dải;
+# auto-merge để nftables tự gộp các dải chồng lấp/kề nhau (FireHOL level1 đã bao gồm
+# sẵn nhiều dải của Spamhaus DROP) thay vì báo "conflicting intervals".
 nft list set inet "$TABLE" blockset4 >/dev/null 2>&1 || \
-    nft add set inet "$TABLE" blockset4 '{ type ipv4_addr; flags interval; }'
+    nft add set inet "$TABLE" blockset4 '{ type ipv4_addr; flags interval; auto-merge; }'
 nft list set inet "$TABLE" blockset6 >/dev/null 2>&1 || \
-    nft add set inet "$TABLE" blockset6 '{ type ipv6_addr; flags interval; }'
+    nft add set inet "$TABLE" blockset6 '{ type ipv6_addr; flags interval; auto-merge; }'
 
 # Chain input, priority -10 để chạy TRƯỚC các chain filter khác.
 # policy accept để không ảnh hưởng traffic ngoài blocklist.
