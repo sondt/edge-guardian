@@ -61,12 +61,24 @@ EG_LINE_REGEX=""
 # the script). Skipped silently when there is no terminal (cron/CI) or no nginx.
 configure_nginx_logging() {
   command -v nginx >/dev/null 2>&1 || return 0
+  local snip="/etc/nginx/conf.d/edge-guardian-log.conf"
+
+  # Already set up on a previous run → never re-prompt (re-install / auto-update stay
+  # silent). The chosen format is whatever the existing snippet uses.
+  if [ -f "$snip" ]; then
+    log "nginx \$host log already configured ($snip) — leaving it as-is."
+    return 0
+  fi
+  # Explicit opt-out (handy for scripted/headless installs).
+  if [ "${EDGEGUARD_NO_NGINX_LOG:-}" = "1" ]; then
+    log "EDGEGUARD_NO_NGINX_LOG=1 — skipping nginx \$host log setup."
+    return 0
+  fi
   if [ ! -r /dev/tty ]; then
     log "Non-interactive install — skipping nginx \$host log setup (see config comments)."
     return 0
   fi
 
-  local snip="/etc/nginx/conf.d/edge-guardian-log.conf"
   if nginx -T 2>/dev/null | grep -qiE 'log_format[^;]*\$host'; then
     log "nginx already logs \$host — per-site stats can use your current access log."
   fi
@@ -278,6 +290,79 @@ if [ "${EDGEGUARD_NO_START:-}" != "1" ] && command -v systemctl >/dev/null 2>&1 
   systemctl --no-pager status edge-guardian | head -5 || true
 else
   log "Skipping service start (no systemd or EDGEGUARD_NO_START=1)."
+fi
+
+# 7) Self-update helper + timer. Always installed; the timer only runs the updater when
+#    enabled. The updater is BINARY-ONLY (swap + restart) — it never touches config,
+#    nftables or nginx, so it never re-prompts. Enable with EDGEGUARD_AUTO_UPDATE=1 or
+#    later via: systemctl enable --now edge-guardian-update.timer
+UPDATER="$BIN_DIR/edge-guardian-update"
+log "Writing self-update helper: $UPDATER"
+cat > "$UPDATER" <<'UPD'
+#!/usr/bin/env bash
+# edge-guardian self-update: if a newer GitHub release exists, swap the binary in place
+# and restart the service. BINARY-ONLY — never touches config, nftables or nginx. Major
+# changes to the nftables schema still need a full installer re-run.
+set -euo pipefail
+REPO="sondt/edge-guardian"
+BIN=/usr/local/bin/edge-guardian
+log() { echo "[edge-guardian-update] $*"; }
+cur="$("$BIN" --version 2>/dev/null | awk '{print $NF}')" || cur=""
+api="$(curl -fsSL --retry 5 --retry-delay 2 "https://api.github.com/repos/$REPO/releases/latest")" \
+  || { log "cannot reach GitHub — will retry next run"; exit 0; }
+tag="$(printf '%s' "$api" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)"
+ver="${tag#v}"
+[ -n "$ver" ] || { log "no release tag found"; exit 0; }
+if [ "$cur" = "$ver" ]; then log "up to date ($cur)"; exit 0; fi
+case "$(uname -m)" in
+  x86_64|amd64)  arch=amd64 ;;
+  aarch64|arm64) arch=arm64 ;;
+  *) log "unsupported arch $(uname -m)"; exit 0 ;;
+esac
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+url="https://github.com/$REPO/releases/download/$tag/edge-guardian_${ver}_linux_${arch}.tar.gz"
+log "new version $ver (current ${cur:-unknown}) — downloading"
+curl -fsSL --retry 5 --retry-delay 2 -o "$tmp/eg.tgz" "$url" || { log "download failed"; exit 0; }
+tar -xzf "$tmp/eg.tgz" -C "$tmp" edge-guardian || { log "bad archive"; exit 0; }
+"$tmp/edge-guardian" --version >/dev/null 2>&1 || { log "new binary won't run — aborting"; exit 0; }
+install -m 0755 "$tmp/edge-guardian" "$BIN"
+systemctl restart edge-guardian
+log "updated ${cur:-unknown} -> $ver"
+UPD
+chmod 0755 "$UPDATER"
+
+cat > /etc/systemd/system/edge-guardian-update.service <<'UNITSVC'
+[Unit]
+Description=edge-guardian self-update (check GitHub, upgrade binary)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/edge-guardian-update
+UNITSVC
+
+cat > /etc/systemd/system/edge-guardian-update.timer <<'UNITTMR'
+[Unit]
+Description=Daily edge-guardian update check
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=6h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNITTMR
+
+if command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  if [ "${EDGEGUARD_AUTO_UPDATE:-}" = "1" ]; then
+    systemctl enable --now edge-guardian-update.timer >/dev/null 2>&1 || true
+    log "Auto-update ENABLED (daily). Disable: systemctl disable --now edge-guardian-update.timer"
+  else
+    log "Auto-update available (not enabled). Enable: systemctl enable --now edge-guardian-update.timer"
+  fi
 fi
 
 echo
