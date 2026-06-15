@@ -13,19 +13,20 @@ import (
 	"time"
 )
 
-// Telegram sends notifications via the Bot API using the net/http stdlib.
+// Telegram sends notifications via the Bot API using the net/http stdlib. Each message
+// is delivered to every configured chat ID (groups, users, channels).
 type Telegram struct {
-	token  string
-	chatID string
-	client *http.Client
+	token   string
+	chatIDs []string
+	client  *http.Client
 }
 
-// NewTelegram creates a Telegram notifier. An empty apiBase => use the default endpoint.
-func NewTelegram(token, chatID string) *Telegram {
+// NewTelegram creates a Telegram notifier sending to one or more chat IDs.
+func NewTelegram(token string, chatIDs []string) *Telegram {
 	return &Telegram{
-		token:  token,
-		chatID: chatID,
-		client: &http.Client{Timeout: 10 * time.Second},
+		token:   token,
+		chatIDs: append([]string(nil), chatIDs...),
+		client:  &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -39,9 +40,21 @@ func (t *Telegram) NotifyHealth(ctx context.Context, ev HealthEvent) error {
 	return t.send(ctx, formatHealthMessage(ev))
 }
 
-// send is the shared POST for Notify/NotifyHealth.
+// send delivers text to every configured chat ID. It is best-effort: a failure to one
+// chat does not stop the others; all errors are joined and returned.
 func (t *Telegram) send(ctx context.Context, text string) error {
-	body := map[string]string{"chat_id": t.chatID, "text": text, "parse_mode": "HTML"}
+	var errs []error
+	for _, chatID := range t.chatIDs {
+		if err := t.sendTo(ctx, chatID, text); err != nil {
+			errs = append(errs, fmt.Errorf("chat %s: %w", chatID, err))
+		}
+	}
+	return errors.Join(errs...)
+}
+
+// sendTo POSTs one message to a single chat ID.
+func (t *Telegram) sendTo(ctx context.Context, chatID, text string) error {
+	body := map[string]string{"chat_id": chatID, "text": text, "parse_mode": "HTML"}
 	payload, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("marshal telegram payload: %w", err)

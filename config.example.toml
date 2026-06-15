@@ -136,7 +136,15 @@ nft_set_v6 = "blocklist6"
 [telegram]
 enabled = true
 bot_token = "DÁN_BOT_TOKEN_VÀO_ĐÂY"   # lấy từ @BotFather
-chat_id = "DÁN_CHAT_ID_VÀO_ĐÂY"        # ID nhóm/kênh, vd -1001234567890
+# Gửi cho MỘT người/nhóm/kênh:
+chat_id = "DÁN_CHAT_ID_VÀO_ĐÂY"        # ID nhóm/kênh/người, vd -1001234567890
+# Gửi cho NHIỀU người cùng lúc: dùng chat_ids (kết hợp được với chat_id ở trên, tự loại trùng).
+# Mỗi thông báo gửi tới TẤT CẢ; lỗi 1 chat không chặn các chat khác.
+# chat_ids = ["123456789", "-1001234567890", "@kenh_canh_bao"]
+#
+# Lấy chat_id của một người: người đó nhắn cho bot, rồi gọi
+#   https://api.telegram.org/bot<BOT_TOKEN>/getUpdates  → đọc "chat":{"id":...}
+# Với nhóm: thêm bot vào nhóm rồi cũng xem getUpdates. Kênh: dùng @tên_kênh (bot phải là admin).
 
 [email]
 # Thông báo qua email dùng Resend (https://resend.com). Có thể bật cùng Telegram —

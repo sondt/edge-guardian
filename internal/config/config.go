@@ -305,9 +305,28 @@ func (c BanConfig) EscalationMemoryDuration() (time.Duration, error) {
 
 // TelegramConfig configures the Telegram notification channel.
 type TelegramConfig struct {
-	Enabled  bool   `toml:"enabled"`
-	BotToken string `toml:"bot_token"`
-	ChatID   string `toml:"chat_id"`
+	Enabled  bool     `toml:"enabled"`
+	BotToken string   `toml:"bot_token"`
+	ChatID   string   `toml:"chat_id"`  // single recipient (back-compat)
+	ChatIDs  []string `toml:"chat_ids"` // multiple recipients (groups, users, channels)
+}
+
+// Recipients merges chat_id + chat_ids into a deduplicated, order-preserving list. Every
+// message is sent to each. Either field (or both) may be set.
+func (c TelegramConfig) Recipients() []string {
+	seen := map[string]bool{}
+	var out []string
+	add := func(s string) {
+		if s = strings.TrimSpace(s); s != "" && !seen[s] {
+			seen[s] = true
+			out = append(out, s)
+		}
+	}
+	add(c.ChatID)
+	for _, id := range c.ChatIDs {
+		add(id)
+	}
+	return out
 }
 
 // EmailConfig configures the email notification channel via Resend (https://resend.com).
@@ -526,8 +545,8 @@ func (c Config) Validate() error {
 		return fmt.Errorf("ban.nft_table / nft_set_v4 / nft_set_v6 must not be empty")
 	}
 	if c.Telegram.Enabled {
-		if c.Telegram.BotToken == "" || c.Telegram.ChatID == "" {
-			return fmt.Errorf("telegram.enabled is true but bot_token/chat_id is empty")
+		if c.Telegram.BotToken == "" || len(c.Telegram.Recipients()) == 0 {
+			return fmt.Errorf("telegram.enabled is true but bot_token is empty or no chat_id/chat_ids set")
 		}
 	}
 	if c.Email.Enabled {

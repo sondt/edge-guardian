@@ -2,10 +2,12 @@ package notify
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -70,7 +72,7 @@ func TestTelegram_Notify(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	tg := NewTelegram("TOKEN", "-100123")
+	tg := NewTelegram("TOKEN", []string{"-100123"})
 	tg.client = srv.Client()
 	tg.client.Transport = rewriteHost(srv.URL)
 
@@ -82,6 +84,47 @@ func TestTelegram_Notify(t *testing.T) {
 	}
 }
 
+func TestTelegram_Notify_MultipleRecipients(t *testing.T) {
+	var mu sync.Mutex
+	var gotChatIDs []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ChatID string `json:"chat_id"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		gotChatIDs = append(gotChatIDs, body.ChatID)
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer srv.Close()
+
+	tg := NewTelegram("TOKEN", []string{"-100123", "456789", "@mychannel"})
+	tg.client = srv.Client()
+	tg.client.Transport = rewriteHost(srv.URL)
+
+	if err := tg.Notify(context.Background(), Event{IP: "1.2.3.4"}); err != nil {
+		t.Fatalf("Notify: %v", err)
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(gotChatIDs) != 3 {
+		t.Fatalf("expected 3 sends (one per chat), got %d: %v", len(gotChatIDs), gotChatIDs)
+	}
+	for _, want := range []string{"-100123", "456789", "@mychannel"} {
+		found := false
+		for _, got := range gotChatIDs {
+			if got == want {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("no message sent to chat %q (got %v)", want, gotChatIDs)
+		}
+	}
+}
+
 func TestTelegram_Notify_ErrorStatus(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -89,7 +132,7 @@ func TestTelegram_Notify_ErrorStatus(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	tg := NewTelegram("TOKEN", "-100123")
+	tg := NewTelegram("TOKEN", []string{"-100123"})
 	tg.client = srv.Client()
 	tg.client.Transport = rewriteHost(srv.URL)
 
@@ -101,7 +144,7 @@ func TestTelegram_Notify_ErrorStatus(t *testing.T) {
 
 func TestTelegram_Notify_ErrorOmitsToken(t *testing.T) {
 	// Point at a closed port so client.Do fails with a *url.Error carrying the URL.
-	tg := NewTelegram("SECRETTOKEN", "-100123")
+	tg := NewTelegram("SECRETTOKEN", []string{"-100123"})
 	tg.client = &http.Client{Timeout: time.Second}
 	tg.client.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return nil, &url.Error{Op: "Post", URL: r.URL.String(), Err: errTest}

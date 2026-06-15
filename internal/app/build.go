@@ -89,7 +89,7 @@ func Build(cfg config.Config, logger *slog.Logger) (*Components, error) {
 
 	var channels []notify.Notifier
 	if cfg.Telegram.Enabled {
-		channels = append(channels, notify.NewTelegram(cfg.Telegram.BotToken, cfg.Telegram.ChatID))
+		channels = append(channels, notify.NewTelegram(cfg.Telegram.BotToken, cfg.Telegram.Recipients()))
 	}
 	if cfg.Email.Enabled {
 		channels = append(channels, notify.NewResend(cfg.Email.ResendAPIKey, cfg.Email.From, cfg.Email.To))
