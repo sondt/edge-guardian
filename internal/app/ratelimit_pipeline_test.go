@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"net/netip"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/sondt/edge-guardian/internal/allow"
+	"github.com/sondt/edge-guardian/internal/config"
 	"github.com/sondt/edge-guardian/internal/detect"
 	"github.com/sondt/edge-guardian/internal/parse"
 	"github.com/sondt/edge-guardian/internal/state"
@@ -70,6 +72,37 @@ func TestPipeline_RateLimitBansFlood(t *testing.T) {
 	}
 	if !h.st.IsBanned("203.0.113.60", now) {
 		t.Fatal("ip should be banned")
+	}
+}
+
+// The production ratelimit detector (via buildDetectors) must append the tripping
+// request's URL to the reason, so /bans shows WHAT was hammered, not just the rate.
+func TestBuildDetectors_RateLimitReasonIncludesURL(t *testing.T) {
+	cfg := config.Defaults()
+	cfg.Log.LineRegex = lineRegex
+	cfg.RateLimit.Enabled = true
+	cfg.RateLimit.Threshold = 100
+	cfg.RateLimit.WindowSecs = 10
+
+	dets, _, err := buildDetectors(cfg)
+	if err != nil {
+		t.Fatalf("buildDetectors: %v", err)
+	}
+	var rl *Detector
+	for _, d := range dets {
+		if d.Name == "ratelimit" {
+			rl = d
+		}
+	}
+	if rl == nil {
+		t.Fatal("ratelimit detector not built")
+	}
+	_, _, reason, ok := rl.Inspect(logLine("203.0.113.9", "/api/search?q=x"))
+	if !ok {
+		t.Fatal("ratelimit should match any parsed request")
+	}
+	if !strings.Contains(reason, "rate abuse") || !strings.Contains(reason, "/api/search?q=x") {
+		t.Fatalf("reason should include rate-abuse + the URL, got %q", reason)
 	}
 }
 

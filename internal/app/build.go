@@ -288,16 +288,23 @@ func buildDetectors(cfg config.Config) ([]*Detector, []string, error) {
 	// of all detectors (a proxy/CDN/monitor behind one IP will trip it), so it ships off
 	// with a high threshold and the allowlist is essential.
 	if cfg.RateLimit.Enabled {
-		reason := fmt.Sprintf("rate abuse (>%d req / %ds)", cfg.RateLimit.Threshold, cfg.RateLimit.WindowSecs)
+		base := fmt.Sprintf("rate abuse (>%d req / %ds)", cfg.RateLimit.Threshold, cfg.RateLimit.WindowSecs)
 		dets = append(dets, &Detector{
 			Name:   "ratelimit",
 			Window: detect.Hits(cfg.RateLimit.Threshold, cfg.RateLimit.WindowDuration()),
-			Inspect: func(line string) (ip, sub, reason2 string, ok bool) {
+			Inspect: func(line string) (ip, sub, reason string, ok bool) {
 				ev, matched := parser.Parse(line)
 				if !matched {
 					return "", "", "", false
 				}
-				return ev.IP, "", reason, true
+				// Append the URL of the request that tripped the threshold so the ban
+				// reason shows WHAT was being hammered, not just the rate. It's a
+				// representative sample (the Nth request in the window), not the only URL.
+				r := base
+				if hp := hostPath(ev); hp != "" {
+					r = base + " · " + hp
+				}
+				return ev.IP, "", r, true
 			},
 		})
 		paths = append(paths, cfg.Log.Paths...)
