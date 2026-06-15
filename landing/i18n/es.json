@@ -2,12 +2,10 @@
   "Edge Guardian — calm until something happens · security + edge health for Linux, one binary": "Edge Guardian — en calma hasta que algo pasa · seguridad + salud del borde para Linux, un binario",
   "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. It detects scanners, brute-force and exploits from your logs and bans the source IPs at the nftables firewall — and watches each site's health (5xx, latency, traffic), alerting you the moment something degrades. Built-in dashboard. One line to install.": "Edge Guardian es un guardián de borde gratuito, de código abierto y en un solo binario para Linux. Detecta escáneres, fuerza bruta y exploits en tus logs y banea las IP de origen en el firewall nftables — y vigila la salud de cada sitio (5xx, latencia, tráfico), avisándote en cuanto algo se degrada. Panel integrado. Una línea para instalar.",
   "Edge Guardian — calm until something happens": "Edge Guardian — en calma hasta que algo pasa",
-
   ">Why</a>": ">Por qué</a>",
   ">Features</a>": ">Funciones</a>",
   ">How it works</a>": ">Cómo funciona</a>",
   ">Install</a>": ">Instalar</a>",
-
   "Single&#8209;binary edge guardian &middot; security + site health &middot; Linux &middot; nftables": "Guardián de borde en un solo binario &middot; seguridad + salud de sitios &middot; Linux &middot; nftables",
   ">Calm until</span>": ">En calma hasta</span>",
   ">something&nbsp;happens.</span>": ">que algo&nbsp;pasa.</span>",
@@ -20,13 +18,11 @@
   " nftables native": " nftables nativo",
   " dry&#8209;run safe start": " arranque seguro en dry-run",
   " Apache&#8209;2.0": " Apache-2.0",
-
   "The problem": "El problema",
   "Every public server is under constant fire.": "Todo servidor público está bajo fuego constante.",
   "The moment a box has an IP, bots start probing it — looking for forgotten admin panels, leaked secrets, and weak SSH passwords. The tools that fight back all make you choose between <em>too fiddly</em> and <em>too heavy</em>.": "En cuanto una máquina tiene una IP, los bots empiezan a sondearla — buscando paneles de administración olvidados, secretos filtrados y contraseñas SSH débiles. Las herramientas que responden te obligan a elegir entre <em>demasiado quisquilloso</em> y <em>demasiado pesado</em>.",
   "Lightweight and proven — but only sees one host, leans hard on regex rules, and gets awkward the moment you have more than one box. No dashboard.": "Ligero y probado — pero solo ve un host, depende mucho de reglas regex y se vuelve incómodo en cuanto tienes más de una máquina. Sin panel.",
   "Powerful, with community blocklists — but you're learning an agent, a local API, a bouncer, and collections. And the pretty console? That's the paid part.": "Potente, con listas de bloqueo comunitarias — pero tienes que aprender un agente, una API local, un bouncer y colecciones. ¿Y la bonita consola? Esa es la parte de pago.",
-
   "Why Edge Guardian": "Por qué Edge Guardian",
   "Two jobs, from one log tail.": "Dos tareas, desde un solo flujo de logs.",
   "The same stream that catches attackers also tells you when a site is in trouble. Block the bad traffic, and know the moment something breaks — without a second tool, a database, or an agent.": "El mismo flujo que atrapa atacantes también te dice cuándo un sitio tiene problemas. Bloquea el tráfico malo y entérate en el momento en que algo se rompe — sin una segunda herramienta, base de datos ni agente.",
@@ -34,7 +30,6 @@
   "Scanners, brute&#8209;force, exploit probes and floods — matched against a sliding window and dropped at the kernel via nftables. Repeat offenders escalate.": "Escáneres, fuerza bruta, sondas de exploit e inundaciones — comparados con una ventana deslizante y descartados en el kernel vía nftables. Los reincidentes escalan.",
   "See when a site breaks.": "Ver cuándo se rompe un sitio.",
   "The same access log feeds a health view: per&#8209;site error rate, latency and traffic. It alerts when a site is degraded or down — and again when it recovers.": "El mismo log de acceso alimenta una vista de salud: tasa de error, latencia y tráfico por sitio. Avisa cuando un sitio está degradado o caído — y de nuevo cuando se recupera.",
-
   "Enough to actually run a server on.": "Lo suficiente para operar un servidor de verdad.",
   "<h3>Scanner paths</h3>": "<h3>Rutas de escáner</h3>",
   "Regex on request URIs — the .php/.env/wp&#8209;login probes a clean stack never serves. Ban on the first hit.": "Regex sobre las URI de las peticiones — las sondas .php/.env/wp-login que un stack limpio nunca sirve. Baneo al primer intento.",
@@ -59,7 +54,6 @@
   "CIDR allowlist for your office, VPN &amp; monitoring. Dry&#8209;run to observe for days before you flip the switch.": "Lista de permitidos CIDR para tu oficina, VPN &amp; monitorización. Dry-run para observar durante días antes de activarlo.",
   "Every 4xx/5xx request in one place — host, path, status, IP, user&#8209;agent and GeoIP origin — filterable and paginated on a <code>/errors</code> page.": "Cada petición 4xx/5xx en un solo lugar — host, ruta, estado, IP, user-agent y origen GeoIP — filtrable y paginada en una página <code>/errors</code>.",
   "An optional systemd timer keeps the binary current from GitHub releases — binary&#8209;only, with a safe restart. Off by default.": "Un timer de systemd opcional mantiene el binario al día desde las releases de GitHub — solo el binario, con un reinicio seguro. Desactivado por defecto.",
-
   "One tail. Two branches.": "Un flujo. Dos ramas.",
   "Every line fans out twice: the <b>security</b> branch matches bad traffic and bans it; the <b>health</b> branch counts per&#8209;site status, latency and rate, and alerts on trouble. Adding a detector is a parser and a threshold — never a rewrite.": "Cada línea se reparte dos veces: la rama de <b>seguridad</b> detecta el tráfico malo y lo banea; la rama de <b>salud</b> cuenta estado, latencia y tasa por sitio y avisa ante problemas. Añadir un detector es un parser y un umbral — nunca una reescritura.",
   "<h3>Tail</h3>": "<h3>Lectura</h3>",
@@ -71,20 +65,16 @@
   "Add to the nftables set with a timeout. Dropped on every port, instantly.": "Se añade al set de nftables con timeout. Descartado en todos los puertos, al instante.",
   "<h3>Notify</h3>": "<h3>Notificar</h3>",
   "Bans <em>and</em> health alerts — Telegram, email, the dashboard feed &amp; Sentinel line.": "Baneos <em>y</em> avisos de salud — Telegram, email, el feed del panel &amp; la línea Sentinel.",
-
   "See who's hitting you — and what's breaking.": "Mira quién te ataca — y qué se está rompiendo.",
   "A calm instrument that stays quiet until it matters. When the Sentinel line spikes red, or a site turns <em>degraded</em>, it <em>means</em> something. This ships in the free binary — no Grafana, no paywall.": "Un instrumento tranquilo que se mantiene en silencio hasta que importa. Cuando la línea Sentinel se dispara en rojo, o un sitio pasa a <em>degradado</em>, <em>significa</em> algo. Viene en el binario gratuito — sin Grafana, sin muro de pago.",
-
   "Up and watching in a minute.": "En marcha y vigilando en un minuto.",
   "Starts in dry&#8209;run, so it observes without blocking until you're ready. Then flip one line.": "Arranca en dry-run, así que observa sin bloquear hasta que estés listo. Luego cambias una línea.",
   "<h3><span class=\"d\"></span> One line</h3>": "<h3><span class=\"d\"></span> Una línea</h3>",
   "Detects your arch, installs the binary + systemd unit, and initializes nftables.": "Detecta tu arquitectura, instala el binario + la unidad de systemd e inicializa nftables.",
   "Native packages for amd64 &amp; arm64. Config is a conffile — safe across upgrades.": "Paquetes nativos para amd64 &amp; arm64. La config es un conffile — a salvo entre actualizaciones.",
   "Protects the host firewall via the host network namespace.": "Protege el firewall del host a través del namespace de red del host.",
-
   "In a glance": "De un vistazo",
   "How it stacks up.": "Cómo se compara.",
-
   "Questions": "Preguntas",
   "Straight answers.": "Respuestas directas.",
   "What is Edge Guardian?": "¿Qué es Edge Guardian?",
@@ -94,7 +84,21 @@
   "Is Edge Guardian free?": "¿Edge Guardian es gratis?",
   "What does Edge Guardian need to run?": "¿Qué necesita Edge Guardian para funcionar?",
   "How do I install Edge Guardian?": "¿Cómo instalo Edge Guardian?",
-
   "Free, open source, and built to stay out of your way until something actually happens.": "Gratis, de código abierto y diseñado para no estorbarte hasta que algo pase de verdad.",
-  "View source": "Ver el código"
+  "View source": "Ver el código",
+  "<li>HTTP scanners, SSH brute&#8209;force, exploit signatures, bad bots, rate&#8209;abuse, port scans &amp; honeypots</li>": "<li>Escáneres HTTP, fuerza bruta SSH, firmas de exploit, bots maliciosos, abuso de tasa, escaneos de puertos &amp; honeypots</li>",
+  "<li>nftables bans with auto&#8209;expiry; <b>escalating</b> punishment for repeat offenders</li>": "<li>Baneos de nftables con caducidad automática; castigo <b>escalonado</b> para los reincidentes</li>",
+  "<li>Import FireHOL &amp; Spamhaus blocklists; CIDR allowlist so you never self&#8209;lock</li>": "<li>Importa las listas FireHOL &amp; Spamhaus; lista de permitidos CIDR para no autobloquearte nunca</li>",
+  "<li><b>Dry&#8209;run mode</b> — detect &amp; alert without blocking, so you trust it before you arm it</li>": "<li><b>Modo dry-run</b> — detectar &amp; avisar sin bloquear, para confiar en él antes de activarlo</li>",
+  "<li><b>5xx ratio, p95 latency &amp; request rate</b> per site, on a <code>/sites</code> page</li>": "<li><b>Ratio de 5xx, latencia p95 &amp; tasa de peticiones</b> por sitio, en una página <code>/sites</code></li>",
+  "<li>Degraded / down / recovered alerts with sustained + cooldown — no spam</li>": "<li>Avisos de degradado / caído / recuperado con sostenido + cooldown — sin spam</li>",
+  "<li>A free embedded dashboard: the <b>Sentinel line</b>, ban ledger, live feed</li>": "<li>Un panel integrado gratuito: la <b>línea Sentinel</b>, el registro de baneos, el feed en vivo</li>",
+  "<li>Answers “is anything wrong?” — never “who's viewing what” (not analytics)</li>": "<li>Responde a «¿algo va mal?» — nunca «quién está viendo qué» (no es analítica)</li>",
+  "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one log tail it does two things: <b>security</b> — detect scanners, brute-force and exploits, then ban the source IPs at the nftables firewall — and <b>edge health</b> — watch each site's 5xx ratio, latency and request rate, and alert when a site is degraded or down. It alerts via Telegram or email and ships with a built-in local dashboard.": "Edge Guardian es un guardián de borde gratuito, de código abierto y en un solo binario para Linux. Desde un único flujo de logs hace dos cosas: <b>seguridad</b> — detectar escáneres, fuerza bruta y exploits, y luego banear las IP de origen en el firewall nftables — y <b>salud del borde</b> — vigilar el ratio de 5xx, la latencia y la tasa de peticiones de cada sitio, y avisar cuando un sitio está degradado o caído. Avisa por Telegram o email e incluye un panel local integrado.",
+  "fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections — and its dashboard is a paid feature. Edge Guardian is a single static binary with a one-line install, a dashboard included free, and it also monitors site health — not just security.": "fail2ban depende mucho de regex, solo ve un host y no tiene panel. CrowdSec es potente pero requiere un agente, una API local, un bouncer y colecciones — y su panel es de pago. Edge Guardian es un único binario estático con instalación en una línea, un panel incluido gratis, y además monitoriza la salud de los sitios — no solo la seguridad.",
+  "HTTP scanner paths, SSH brute-force, exploit signatures (SQLi, path traversal, RCE probes, Log4Shell), bad bots by User-Agent (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite floods, port scans (distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus.": "Rutas de escáner HTTP, fuerza bruta SSH, firmas de exploit (SQLi, path traversal, sondas RCE, Log4Shell), bots maliciosos por User-Agent (sqlmap, nikto, nuclei, masscan), inundaciones de abuso de tasa / DoS-lite, escaneos de puertos (puertos de destino distintos por IP) e impactos en puertos señuelo. También puede importar listas de bloqueo públicas como FireHOL y Spamhaus.",
+  "Yes. The same access log feeds a health branch that aggregates per-site status mix, 5xx error ratio, request rate and p95 latency, and alerts (with sustained + cooldown to avoid noise) when a site is degraded or down — and again when it recovers. It deliberately does <em>not</em> do web analytics: it answers “is anything wrong?”, not “who is viewing what?”.": "Sí. El mismo log de acceso alimenta una rama de salud que agrega, por sitio, la mezcla de estados, el ratio de errores 5xx, la tasa de peticiones y la latencia p95, y avisa (con sostenido + cooldown para evitar ruido) cuando un sitio está degradado o caído — y de nuevo cuando se recupera. Deliberadamente <em>no</em> hace analítica web: responde a «¿algo va mal?», no a «¿quién está viendo qué?».",
+  "Yes. Edge Guardian is free and open source under the Apache-2.0 license — including the dashboard and the health monitoring.": "Sí. Edge Guardian es gratuito y de código abierto bajo la licencia Apache-2.0 — incluidos el panel y la monitorización de salud.",
+  "A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required.": "Un servidor Linux con nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ o equivalente) y root o CAP_NET_ADMIN. No se requiere base de datos, ni agente, ni servicio externo.",
+  "Run the one-line installer (<code>curl -fsSL .../install.sh | sudo bash</code>), install the <code>.deb</code> or <code>.rpm</code> package, or run the Docker image. Edge Guardian starts in dry-run mode so it observes and alerts before it blocks.": "Ejecuta el instalador de una línea (<code>curl -fsSL .../install.sh | sudo bash</code>), instala el paquete <code>.deb</code> o <code>.rpm</code>, o ejecuta la imagen de Docker. Edge Guardian arranca en modo dry-run: observa y avisa antes de bloquear."
 }

@@ -1,15 +1,13 @@
 {
-  "Edge Guardian — calm until something happens · security + edge health for Linux, one binary": "Edge Guardian — yên cho tới khi có chuyện · bảo mật + sức khỏe biên cho Linux, một binary",
+  "Edge Guardian — calm until something happens · security + edge health for Linux, one binary": "Edge Guardian — Mọi thứ hoạt động bình thường đến khi có chuyện · bảo mật + sức khỏe biên cho Linux, một binary",
   "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. It detects scanners, brute-force and exploits from your logs and bans the source IPs at the nftables firewall — and watches each site's health (5xx, latency, traffic), alerting you the moment something degrades. Built-in dashboard. One line to install.": "Edge Guardian là một edge guardian mã nguồn mở, miễn phí, gói trong một binary duy nhất cho Linux. Nó phát hiện scanner, brute-force và khai thác từ log của bạn rồi chặn IP nguồn ngay tại tường lửa nftables — đồng thời theo dõi sức khỏe từng site (5xx, độ trễ, lưu lượng) và cảnh báo ngay khi có gì xuống cấp. Có sẵn dashboard. Cài bằng một dòng lệnh.",
-  "Edge Guardian — calm until something happens": "Edge Guardian — yên cho tới khi có chuyện",
-
+  "Edge Guardian — calm until something happens": "Edge Guardian — mọi thứ hoạt động bình thường đến khi có chuyện",
   ">Why</a>": ">Vì sao</a>",
   ">Features</a>": ">Tính năng</a>",
   ">How it works</a>": ">Cách hoạt động</a>",
   ">Install</a>": ">Cài đặt</a>",
-
   "Single&#8209;binary edge guardian &middot; security + site health &middot; Linux &middot; nftables": "Edge guardian một&#8209;binary &middot; bảo mật + sức khỏe site &middot; Linux &middot; nftables",
-  ">Calm until</span>": ">Yên cho tới khi</span>",
+  ">Calm until</span>": ">Mọi thứ hoạt động bình thường đến khi</span>",
   ">something&nbsp;happens.</span>": ">có chuyện&nbsp;xảy ra.</span>",
   "Edge Guardian reads your logs to do two things: <b>ban the bad traffic</b> — scanners, brute&#8209;force, exploits — at the firewall, and <b>watch each site's health</b> (5xx, latency, traffic), alerting the moment something degrades. A dashboard ships <b>free</b>. <b>One static binary.</b> One line to install.": "Edge Guardian đọc log của bạn để làm hai việc: <b>chặn traffic xấu</b> — scanner, brute&#8209;force, khai thác — ngay tại tường lửa, và <b>theo dõi sức khỏe từng site</b> (5xx, độ trễ, lưu lượng), cảnh báo ngay khi có gì xuống cấp. Dashboard <b>miễn phí</b>. <b>Một binary tĩnh.</b> Cài bằng một dòng.",
   "Star on GitHub": "Star trên GitHub",
@@ -20,21 +18,18 @@
   " nftables native": " nftables thuần",
   " dry&#8209;run safe start": " khởi động an toàn ở dry&#8209;run",
   " Apache&#8209;2.0": " Apache&#8209;2.0",
-
   "The problem": "Vấn đề",
   "Every public server is under constant fire.": "Mọi server công khai đều bị tấn công liên tục.",
   "The moment a box has an IP, bots start probing it — looking for forgotten admin panels, leaked secrets, and weak SSH passwords. The tools that fight back all make you choose between <em>too fiddly</em> and <em>too heavy</em>.": "Vừa có IP là bot bắt đầu dò — tìm trang admin bị bỏ quên, secret rò rỉ và mật khẩu SSH yếu. Các công cụ chống lại đều bắt bạn chọn giữa <em>quá rườm rà</em> và <em>quá nặng</em>.",
   "Lightweight and proven — but only sees one host, leans hard on regex rules, and gets awkward the moment you have more than one box. No dashboard.": "Nhẹ và đã được kiểm chứng — nhưng chỉ thấy một host, phụ thuộc nặng vào luật regex, và trở nên vướng víu ngay khi bạn có nhiều hơn một máy. Không có dashboard.",
   "Powerful, with community blocklists — but you're learning an agent, a local API, a bouncer, and collections. And the pretty console? That's the paid part.": "Mạnh, có blocklist cộng đồng — nhưng bạn phải học agent, local API, bouncer và collection. Còn cái console đẹp đẽ? Đó là phần trả phí.",
-
   "Why Edge Guardian": "Vì sao chọn Edge Guardian",
   "Two jobs, from one log tail.": "Hai việc, từ một luồng đọc log.",
-  "The same stream that catches attackers also tells you when a site is in trouble. Block the bad traffic, and know the moment something breaks — without a second tool, a database, or an agent.": "Cùng một luồng bắt kẻ tấn công cũng cho bạn biết khi một site gặp sự cố. Chặn traffic xấu, và biết ngay khoảnh khắc có gì hỏng — không cần công cụ thứ hai, database hay agent.",
+  "The same stream that catches attackers also tells you when a site is in trouble. Block the bad traffic, and know the moment something breaks — without a second tool, a database, or an agent.": "Cùng một luồng bắt kẻ tấn công và cho bạn biết khi một site gặp sự cố. Chặn traffic xấu, và biết ngay khoảnh khắc có gì hỏng — không cần công cụ thứ hai, database hay agent.",
   "Block the bad traffic.": "Chặn traffic xấu.",
   "Scanners, brute&#8209;force, exploit probes and floods — matched against a sliding window and dropped at the kernel via nftables. Repeat offenders escalate.": "Scanner, brute&#8209;force, dò khai thác và flood — đối chiếu với cửa sổ trượt rồi drop ngay ở kernel qua nftables. Tái phạm bị phạt nặng dần.",
   "See when a site breaks.": "Thấy khi một site hỏng.",
   "The same access log feeds a health view: per&#8209;site error rate, latency and traffic. It alerts when a site is degraded or down — and again when it recovers.": "Cùng access log đó nuôi một bảng sức khỏe: tỷ lệ lỗi, độ trễ và lưu lượng theo từng&#8209;site. Cảnh báo khi site xuống cấp hoặc sập — và báo lại khi hồi phục.",
-
   "Enough to actually run a server on.": "Đủ để thực sự vận hành một server.",
   "<h3>Scanner paths</h3>": "<h3>Đường dẫn scanner</h3>",
   "Regex on request URIs — the .php/.env/wp&#8209;login probes a clean stack never serves. Ban on the first hit.": "Regex trên URI request — các cú dò .php/.env/wp&#8209;login mà một stack sạch không bao giờ phục vụ. Chặn ngay từ lần đầu.",
@@ -59,7 +54,6 @@
   "CIDR allowlist for your office, VPN &amp; monitoring. Dry&#8209;run to observe for days before you flip the switch.": "Allowlist CIDR cho văn phòng, VPN &amp; giám sát của bạn. Dry&#8209;run để quan sát vài ngày trước khi bật chặn thật.",
   "Every 4xx/5xx request in one place — host, path, status, IP, user&#8209;agent and GeoIP origin — filterable and paginated on a <code>/errors</code> page.": "Mọi request 4xx/5xx ở một nơi — host, đường dẫn, status, IP, user&#8209;agent và nguồn GeoIP — lọc và phân trang trên trang <code>/errors</code>.",
   "An optional systemd timer keeps the binary current from GitHub releases — binary&#8209;only, with a safe restart. Off by default.": "Một systemd timer tùy chọn giữ binary luôn mới từ GitHub releases — chỉ&#8209;binary, restart an toàn. Mặc định tắt.",
-
   "One tail. Two branches.": "Một luồng đọc. Hai nhánh.",
   "Every line fans out twice: the <b>security</b> branch matches bad traffic and bans it; the <b>health</b> branch counts per&#8209;site status, latency and rate, and alerts on trouble. Adding a detector is a parser and a threshold — never a rewrite.": "Mỗi dòng tỏa ra hai lần: nhánh <b>bảo mật</b> khớp traffic xấu rồi chặn; nhánh <b>sức khỏe</b> đếm status, độ trễ và tần suất theo từng&#8209;site, cảnh báo khi có sự cố. Thêm một detector chỉ là một parser và một ngưỡng — không bao giờ phải viết lại.",
   "<h3>Tail</h3>": "<h3>Đọc log</h3>",
@@ -71,20 +65,16 @@
   "Add to the nftables set with a timeout. Dropped on every port, instantly.": "Thêm vào set nftables kèm timeout. Drop trên mọi cổng, tức thì.",
   "<h3>Notify</h3>": "<h3>Thông báo</h3>",
   "Bans <em>and</em> health alerts — Telegram, email, the dashboard feed &amp; Sentinel line.": "Cả lần chặn <em>và</em> cảnh báo sức khỏe — Telegram, email, feed dashboard &amp; dải Sentinel.",
-
   "See who's hitting you — and what's breaking.": "Thấy ai đang tấn công bạn — và cái gì đang hỏng.",
-  "A calm instrument that stays quiet until it matters. When the Sentinel line spikes red, or a site turns <em>degraded</em>, it <em>means</em> something. This ships in the free binary — no Grafana, no paywall.": "Một thiết bị đo điềm tĩnh, im lặng cho tới khi có chuyện. Khi dải Sentinel bật đỏ, hoặc một site chuyển <em>xuống cấp</em>, nó <em>có nghĩa</em> thật. Có sẵn trong binary miễn phí — không Grafana, không paywall.",
-
+  "A calm instrument that stays quiet until it matters. When the Sentinel line spikes red, or a site turns <em>degraded</em>, it <em>means</em> something. This ships in the free binary — no Grafana, no paywall.": "Một thiết bị đo điềm tĩnh, im lặng đến khi có chuyện. Khi dải Sentinel bật đỏ, hoặc một site chuyển <em>xuống cấp</em>, nó <em>có nghĩa</em> thật. Có sẵn trong binary miễn phí — không Grafana, không paywall.",
   "Up and watching in a minute.": "Chạy và canh gác trong một phút.",
-  "Starts in dry&#8209;run, so it observes without blocking until you're ready. Then flip one line.": "Khởi động ở dry&#8209;run, nên nó quan sát mà không chặn cho tới khi bạn sẵn sàng. Rồi đổi một dòng.",
+  "Starts in dry&#8209;run, so it observes without blocking until you're ready. Then flip one line.": "Khởi động ở dry&#8209;run, nên nó quan sát mà không chặn đến khi bạn sẵn sàng. Rồi đổi một dòng.",
   "<h3><span class=\"d\"></span> One line</h3>": "<h3><span class=\"d\"></span> Một dòng</h3>",
   "Detects your arch, installs the binary + systemd unit, and initializes nftables.": "Nhận diện kiến trúc, cài binary + systemd unit, và khởi tạo nftables.",
   "Native packages for amd64 &amp; arm64. Config is a conffile — safe across upgrades.": "Gói native cho amd64 &amp; arm64. Config là conffile — an toàn qua các lần nâng cấp.",
   "Protects the host firewall via the host network namespace.": "Bảo vệ tường lửa host qua network namespace của host.",
-
   "In a glance": "Trong một cái nhìn",
   "How it stacks up.": "So sánh thế nào.",
-
   "Questions": "Câu hỏi",
   "Straight answers.": "Trả lời thẳng.",
   "What is Edge Guardian?": "Edge Guardian là gì?",
@@ -94,7 +84,21 @@
   "Is Edge Guardian free?": "Edge Guardian có miễn phí không?",
   "What does Edge Guardian need to run?": "Edge Guardian cần gì để chạy?",
   "How do I install Edge Guardian?": "Cài Edge Guardian thế nào?",
-
-  "Free, open source, and built to stay out of your way until something actually happens.": "Miễn phí, mã nguồn mở, và được làm ra để không vướng chân bạn cho tới khi thật sự có chuyện.",
-  "View source": "Xem mã nguồn"
+  "Free, open source, and built to stay out of your way until something actually happens.": "Miễn phí, mã nguồn mở, và được làm ra để không vướng chân bạn đến khi thật sự có chuyện.",
+  "View source": "Xem mã nguồn",
+  "<li>HTTP scanners, SSH brute&#8209;force, exploit signatures, bad bots, rate&#8209;abuse, port scans &amp; honeypots</li>": "<li>Scanner HTTP, brute&#8209;force SSH, chữ ký khai thác, bad bot, lạm&#8209;dụng tần suất, quét cổng &amp; honeypot</li>",
+  "<li>nftables bans with auto&#8209;expiry; <b>escalating</b> punishment for repeat offenders</li>": "<li>Chặn nftables tự&#8209;hết hạn; phạt <b>leo thang</b> với kẻ tái phạm</li>",
+  "<li>Import FireHOL &amp; Spamhaus blocklists; CIDR allowlist so you never self&#8209;lock</li>": "<li>Nhập blocklist FireHOL &amp; Spamhaus; allowlist CIDR để bạn không bao giờ tự&#8209;khóa</li>",
+  "<li><b>Dry&#8209;run mode</b> — detect &amp; alert without blocking, so you trust it before you arm it</li>": "<li><b>Chế độ dry&#8209;run</b> — phát hiện &amp; cảnh báo mà không chặn, để bạn tin tưởng trước khi bật</li>",
+  "<li><b>5xx ratio, p95 latency &amp; request rate</b> per site, on a <code>/sites</code> page</li>": "<li><b>Tỷ lệ 5xx, độ trễ p95 &amp; tần suất request</b> theo từng site, trên trang <code>/sites</code></li>",
+  "<li>Degraded / down / recovered alerts with sustained + cooldown — no spam</li>": "<li>Cảnh báo xuống cấp / sập / hồi phục kèm sustained + cooldown — không spam</li>",
+  "<li>A free embedded dashboard: the <b>Sentinel line</b>, ban ledger, live feed</li>": "<li>Dashboard nhúng miễn phí: <b>dải Sentinel</b>, sổ ban, feed trực tiếp</li>",
+  "<li>Answers “is anything wrong?” — never “who's viewing what” (not analytics)</li>": "<li>Trả lời “có gì sai không?” — không bao giờ “ai đang xem gì” (không phải analytics)</li>",
+  "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one log tail it does two things: <b>security</b> — detect scanners, brute-force and exploits, then ban the source IPs at the nftables firewall — and <b>edge health</b> — watch each site's 5xx ratio, latency and request rate, and alert when a site is degraded or down. It alerts via Telegram or email and ships with a built-in local dashboard.": "Edge Guardian là một edge guardian mã nguồn mở, miễn phí, một binary cho Linux. Từ một luồng đọc log, nó làm hai việc: <b>bảo mật</b> — phát hiện scanner, brute-force và khai thác, rồi chặn IP nguồn tại tường lửa nftables — và <b>sức khỏe biên</b> — theo dõi tỷ lệ 5xx, độ trễ và tần suất request của từng site, cảnh báo khi site xuống cấp hoặc sập. Nó cảnh báo qua Telegram hoặc email và đi kèm dashboard local tích hợp.",
+  "fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections — and its dashboard is a paid feature. Edge Guardian is a single static binary with a one-line install, a dashboard included free, and it also monitors site health — not just security.": "fail2ban nặng về regex, chỉ thấy một host và không có dashboard. CrowdSec mạnh nhưng cần agent, local API, bouncer và collection — còn dashboard là tính năng trả phí. Edge Guardian là một binary tĩnh duy nhất, cài một dòng, dashboard miễn phí kèm theo, và còn theo dõi sức khỏe site — không chỉ bảo mật.",
+  "HTTP scanner paths, SSH brute-force, exploit signatures (SQLi, path traversal, RCE probes, Log4Shell), bad bots by User-Agent (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite floods, port scans (distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus.": "Đường dẫn scanner HTTP, brute-force SSH, chữ ký khai thác (SQLi, path traversal, dò RCE, Log4Shell), bad bot theo User-Agent (sqlmap, nikto, nuclei, masscan), flood lạm dụng tần suất / DoS-lite, quét cổng (số cổng đích khác nhau theo IP), và chạm cổng honeypot. Nó cũng có thể nhập blocklist công khai như FireHOL và Spamhaus.",
+  "Yes. The same access log feeds a health branch that aggregates per-site status mix, 5xx error ratio, request rate and p95 latency, and alerts (with sustained + cooldown to avoid noise) when a site is degraded or down — and again when it recovers. It deliberately does <em>not</em> do web analytics: it answers “is anything wrong?”, not “who is viewing what?”.": "Có. Cùng access log đó nuôi một nhánh sức khỏe, tổng hợp phân bố status, tỷ lệ lỗi 5xx, tần suất request và độ trễ p95 theo từng site, và cảnh báo (kèm sustained + cooldown để tránh nhiễu) khi site xuống cấp hoặc sập — và báo lại khi hồi phục. Nó cố ý <em>không</em> làm web analytics: nó trả lời “có gì sai không?”, chứ không phải “ai đang xem gì?”.",
+  "Yes. Edge Guardian is free and open source under the Apache-2.0 license — including the dashboard and the health monitoring.": "Có. Edge Guardian miễn phí và mã nguồn mở theo giấy phép Apache-2.0 — gồm cả dashboard và phần theo dõi sức khỏe.",
+  "A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required.": "Một server Linux có nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ hoặc tương đương) và quyền root hoặc CAP_NET_ADMIN. Không cần database, không agent, không dịch vụ ngoài.",
+  "Run the one-line installer (<code>curl -fsSL .../install.sh | sudo bash</code>), install the <code>.deb</code> or <code>.rpm</code> package, or run the Docker image. Edge Guardian starts in dry-run mode so it observes and alerts before it blocks.": "Chạy trình cài một dòng (<code>curl -fsSL .../install.sh | sudo bash</code>), cài gói <code>.deb</code> hoặc <code>.rpm</code>, hoặc chạy image Docker. Edge Guardian khởi động ở chế độ dry-run nên nó quan sát và cảnh báo trước khi chặn."
 }

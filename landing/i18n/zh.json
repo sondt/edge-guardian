@@ -2,12 +2,10 @@
   "Edge Guardian — calm until something happens · security + edge health for Linux, one binary": "Edge Guardian — 平静，直到有事发生 · 面向 Linux 的安全 + 边缘健康，单一二进制",
   "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. It detects scanners, brute-force and exploits from your logs and bans the source IPs at the nftables firewall — and watches each site's health (5xx, latency, traffic), alerting you the moment something degrades. Built-in dashboard. One line to install.": "Edge Guardian 是面向 Linux 的免费、开源、单一二进制边缘守护程序。它从你的日志中检测扫描器、暴力破解与漏洞利用，并在 nftables 防火墙处封禁来源 IP——同时监控每个站点的健康（5xx、延迟、流量），一旦出现劣化立即告警。内置仪表盘。一行命令即可安装。",
   "Edge Guardian — calm until something happens": "Edge Guardian — 平静，直到有事发生",
-
   ">Why</a>": ">为什么</a>",
   ">Features</a>": ">功能</a>",
   ">How it works</a>": ">工作原理</a>",
   ">Install</a>": ">安装</a>",
-
   "Single&#8209;binary edge guardian &middot; security + site health &middot; Linux &middot; nftables": "单一二进制边缘守护 &middot; 安全 + 站点健康 &middot; Linux &middot; nftables",
   ">Calm until</span>": ">平静，直到</span>",
   ">something&nbsp;happens.</span>": ">有事&nbsp;发生。</span>",
@@ -20,13 +18,11 @@
   " nftables native": " 原生 nftables",
   " dry&#8209;run safe start": " 以 dry-run 安全启动",
   " Apache&#8209;2.0": " Apache-2.0",
-
   "The problem": "问题所在",
   "Every public server is under constant fire.": "每一台公网服务器都在持续遭受攻击。",
   "The moment a box has an IP, bots start probing it — looking for forgotten admin panels, leaked secrets, and weak SSH passwords. The tools that fight back all make you choose between <em>too fiddly</em> and <em>too heavy</em>.": "机器一旦有了 IP，机器人就开始探测——寻找被遗忘的后台、泄露的密钥和弱 SSH 口令。能反击的工具都逼你在<em>太繁琐</em>和<em>太笨重</em>之间二选一。",
   "Lightweight and proven — but only sees one host, leans hard on regex rules, and gets awkward the moment you have more than one box. No dashboard.": "轻量且久经考验——但只能看到一台主机，严重依赖正则规则，一旦你有多台机器就变得别扭。没有仪表盘。",
   "Powerful, with community blocklists — but you're learning an agent, a local API, a bouncer, and collections. And the pretty console? That's the paid part.": "强大，带有社区封禁列表——但你得学习 agent、本地 API、bouncer 和 collections。而那个漂亮的控制台？那是付费部分。",
-
   "Why Edge Guardian": "为什么选 Edge Guardian",
   "Two jobs, from one log tail.": "一条日志流，两项任务。",
   "The same stream that catches attackers also tells you when a site is in trouble. Block the bad traffic, and know the moment something breaks — without a second tool, a database, or an agent.": "抓住攻击者的同一条数据流，也会在站点出问题时告诉你。封禁恶意流量，并在出故障的那一刻就知道——无需第二个工具、数据库或 agent。",
@@ -34,7 +30,6 @@
   "Scanners, brute&#8209;force, exploit probes and floods — matched against a sliding window and dropped at the kernel via nftables. Repeat offenders escalate.": "扫描器、暴力破解、漏洞探测和洪泛——对照滑动窗口匹配，并经 nftables 在内核层丢弃。屡犯者惩罚逐级升级。",
   "See when a site breaks.": "看见站点何时出故障。",
   "The same access log feeds a health view: per&#8209;site error rate, latency and traffic. It alerts when a site is degraded or down — and again when it recovers.": "同一份访问日志驱动一个健康视图：按站点的错误率、延迟和流量。站点劣化或宕机时告警——恢复时再次告警。",
-
   "Enough to actually run a server on.": "足以真正撑起一台服务器。",
   "<h3>Scanner paths</h3>": "<h3>扫描路径</h3>",
   "Regex on request URIs — the .php/.env/wp&#8209;login probes a clean stack never serves. Ban on the first hit.": "对请求 URI 做正则匹配——干净的栈永远不会提供的 .php/.env/wp-login 探测。首次命中即封禁。",
@@ -59,7 +54,6 @@
   "CIDR allowlist for your office, VPN &amp; monitoring. Dry&#8209;run to observe for days before you flip the switch.": "为办公室、VPN 与监控设置 CIDR 允许名单。先用 dry-run 观察数日，再正式启用封禁。",
   "Every 4xx/5xx request in one place — host, path, status, IP, user&#8209;agent and GeoIP origin — filterable and paginated on a <code>/errors</code> page.": "所有 4xx/5xx 请求集中一处——主机、路径、状态、IP、User-Agent 与 GeoIP 来源——在 <code>/errors</code> 页面可筛选、可分页。",
   "An optional systemd timer keeps the binary current from GitHub releases — binary&#8209;only, with a safe restart. Off by default.": "可选的 systemd 定时器从 GitHub releases 保持二进制为最新——仅更新二进制，并安全重启。默认关闭。",
-
   "One tail. Two branches.": "一条日志流。两条分支。",
   "Every line fans out twice: the <b>security</b> branch matches bad traffic and bans it; the <b>health</b> branch counts per&#8209;site status, latency and rate, and alerts on trouble. Adding a detector is a parser and a threshold — never a rewrite.": "每一行都分发两次：<b>安全</b>分支匹配恶意流量并封禁；<b>健康</b>分支按站点统计状态、延迟和速率，出问题时告警。新增一个检测器只需一个解析器和一个阈值——绝不用重写。",
   "<h3>Tail</h3>": "<h3>读取</h3>",
@@ -71,20 +65,16 @@
   "Add to the nftables set with a timeout. Dropped on every port, instantly.": "加入带超时的 nftables set。在所有端口上即时丢弃。",
   "<h3>Notify</h3>": "<h3>通知</h3>",
   "Bans <em>and</em> health alerts — Telegram, email, the dashboard feed &amp; Sentinel line.": "封禁<em>与</em>健康告警——Telegram、邮件、仪表盘动态与 Sentinel 线。",
-
   "See who's hitting you — and what's breaking.": "看清谁在攻击你——以及什么正在出故障。",
   "A calm instrument that stays quiet until it matters. When the Sentinel line spikes red, or a site turns <em>degraded</em>, it <em>means</em> something. This ships in the free binary — no Grafana, no paywall.": "一台沉静的仪表，在关键时刻到来前一直安静。当 Sentinel 线骤然变红，或某个站点转为<em>劣化</em>，它就<em>意味着</em>真有问题。随免费二进制附带——无需 Grafana，没有付费墙。",
-
   "Up and watching in a minute.": "一分钟内即可运行并值守。",
   "Starts in dry&#8209;run, so it observes without blocking until you're ready. Then flip one line.": "以 dry-run 启动，在你准备好之前只观察、不封禁。然后改一行即可。",
   "<h3><span class=\"d\"></span> One line</h3>": "<h3><span class=\"d\"></span> 一行命令</h3>",
   "Detects your arch, installs the binary + systemd unit, and initializes nftables.": "识别你的架构，安装二进制 + systemd 单元，并初始化 nftables。",
   "Native packages for amd64 &amp; arm64. Config is a conffile — safe across upgrades.": "面向 amd64 与 arm64 的原生软件包。配置为 conffile——升级时安全保留。",
   "Protects the host firewall via the host network namespace.": "通过主机网络命名空间保护主机防火墙。",
-
   "In a glance": "一目了然",
   "How it stacks up.": "横向对比如何。",
-
   "Questions": "常见问题",
   "Straight answers.": "直截了当的回答。",
   "What is Edge Guardian?": "Edge Guardian 是什么？",
@@ -94,7 +84,21 @@
   "Is Edge Guardian free?": "Edge Guardian 免费吗？",
   "What does Edge Guardian need to run?": "运行 Edge Guardian 需要什么？",
   "How do I install Edge Guardian?": "如何安装 Edge Guardian？",
-
   "Free, open source, and built to stay out of your way until something actually happens.": "免费、开源，并被设计成在真正出事之前都不打扰你。",
-  "View source": "查看源码"
+  "View source": "查看源码",
+  "<li>HTTP scanners, SSH brute&#8209;force, exploit signatures, bad bots, rate&#8209;abuse, port scans &amp; honeypots</li>": "<li>HTTP 扫描器、SSH 暴力破解、漏洞特征、恶意机器人、速率滥用、端口扫描与蜜罐</li>",
+  "<li>nftables bans with auto&#8209;expiry; <b>escalating</b> punishment for repeat offenders</li>": "<li>带自动过期的 nftables 封禁；对屡犯者<b>逐级加重</b>惩罚</li>",
+  "<li>Import FireHOL &amp; Spamhaus blocklists; CIDR allowlist so you never self&#8209;lock</li>": "<li>导入 FireHOL 与 Spamhaus 封禁列表；CIDR 允许名单，让你永不自锁</li>",
+  "<li><b>Dry&#8209;run mode</b> — detect &amp; alert without blocking, so you trust it before you arm it</li>": "<li><b>dry-run 模式</b>——检测与告警但不封禁，让你在正式启用前先信任它</li>",
+  "<li><b>5xx ratio, p95 latency &amp; request rate</b> per site, on a <code>/sites</code> page</li>": "<li>按站点的 <b>5xx 比率、p95 延迟与请求速率</b>，呈现在 <code>/sites</code> 页面</li>",
+  "<li>Degraded / down / recovered alerts with sustained + cooldown — no spam</li>": "<li>劣化 / 宕机 / 恢复告警，带持续判定 + 冷却——不刷屏</li>",
+  "<li>A free embedded dashboard: the <b>Sentinel line</b>, ban ledger, live feed</li>": "<li>免费内置仪表盘：<b>Sentinel 线</b>、封禁台账、实时动态</li>",
+  "<li>Answers “is anything wrong?” — never “who's viewing what” (not analytics)</li>": "<li>回答“是不是哪里出问题了？”——绝不回答“谁在看什么”（不是分析统计）</li>",
+  "Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one log tail it does two things: <b>security</b> — detect scanners, brute-force and exploits, then ban the source IPs at the nftables firewall — and <b>edge health</b> — watch each site's 5xx ratio, latency and request rate, and alert when a site is degraded or down. It alerts via Telegram or email and ships with a built-in local dashboard.": "Edge Guardian 是面向 Linux 的免费、开源、单一二进制边缘守护程序。从一条日志流中它做两件事：<b>安全</b>——检测扫描器、暴力破解与漏洞利用，然后在 nftables 防火墙处封禁来源 IP——以及<b>边缘健康</b>——监控每个站点的 5xx 比率、延迟和请求速率，并在站点劣化或宕机时告警。它通过 Telegram 或邮件告警，并自带内置的本地仪表盘。",
+  "fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections — and its dashboard is a paid feature. Edge Guardian is a single static binary with a one-line install, a dashboard included free, and it also monitors site health — not just security.": "fail2ban 严重依赖正则，只能看到一台主机，且没有仪表盘。CrowdSec 很强大，但需要 agent、本地 API、bouncer 和 collections——而且它的仪表盘是付费功能。Edge Guardian 是单一静态二进制，一行命令安装，免费附带仪表盘，并且还监控站点健康——而不只是安全。",
+  "HTTP scanner paths, SSH brute-force, exploit signatures (SQLi, path traversal, RCE probes, Log4Shell), bad bots by User-Agent (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite floods, port scans (distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus.": "HTTP 扫描路径、SSH 暴力破解、漏洞特征（SQLi、路径遍历、RCE 探测、Log4Shell）、按 User-Agent 识别的恶意机器人（sqlmap、nikto、nuclei、masscan）、速率滥用 / 轻量级 DoS 洪泛、端口扫描（按 IP 统计不同目标端口），以及蜜罐端口命中。它还能导入 FireHOL、Spamhaus 等公开封禁列表。",
+  "Yes. The same access log feeds a health branch that aggregates per-site status mix, 5xx error ratio, request rate and p95 latency, and alerts (with sustained + cooldown to avoid noise) when a site is degraded or down — and again when it recovers. It deliberately does <em>not</em> do web analytics: it answers “is anything wrong?”, not “who is viewing what?”.": "是的。同一份访问日志驱动一个健康分支，按站点聚合状态分布、5xx 错误率、请求速率与 p95 延迟，并在站点劣化或宕机时告警（带持续判定 + 冷却以避免噪声）——恢复时再次告警。它刻意<em>不做</em>网站分析：它回答“是不是哪里出问题了？”，而非“谁在看什么？”。",
+  "Yes. Edge Guardian is free and open source under the Apache-2.0 license — including the dashboard and the health monitoring.": "是的。Edge Guardian 基于 Apache-2.0 许可证免费且开源——包括仪表盘与健康监控。",
+  "A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required.": "一台装有 nftables 的 Linux 服务器（Debian 11+、Ubuntu 20.04+、RHEL 9+ 或同等版本），以及 root 或 CAP_NET_ADMIN。无需数据库、无需 agent、无需外部服务。",
+  "Run the one-line installer (<code>curl -fsSL .../install.sh | sudo bash</code>), install the <code>.deb</code> or <code>.rpm</code> package, or run the Docker image. Edge Guardian starts in dry-run mode so it observes and alerts before it blocks.": "运行一行安装脚本（<code>curl -fsSL .../install.sh | sudo bash</code>）、安装 <code>.deb</code> 或 <code>.rpm</code> 软件包，或运行 Docker 镜像。Edge Guardian 以 dry-run 模式启动，先观察并告警，然后才封禁。"
 }

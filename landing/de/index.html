@@ -98,12 +98,12 @@
         {
           "@type": "Question",
           "name": "Was braucht Edge Guardian zum Laufen?",
-          "acceptedAnswer": { "@type": "Answer", "text": "A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Ein Linux-Server mit nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ oder gleichwertig) und root oder CAP_NET_ADMIN. Keine Datenbank, kein Agent und kein externer Dienst sind erforderlich." }
         },
         {
           "@type": "Question",
           "name": "What attacks does Edge Guardian detect?",
-          "acceptedAnswer": { "@type": "Answer", "text": "HTTP scanner paths, SSH brute-force, exploit signatures (SQLi, path traversal, RCE probes, Log4Shell), bad bots by User-Agent (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite floods, port scans (distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus." }
+          "acceptedAnswer": { "@type": "Answer", "text": "HTTP-Scanner-Pfade, SSH-Brute-Force, Exploit-Signaturen (SQLi, Path Traversal, RCE-Sonden, Log4Shell), Bad Bots per User-Agent (sqlmap, nikto, nuclei, masscan), Rate-Missbrauch- / DoS-Lite-Floods, Portscans (verschiedene Zielports pro IP) und Honeypot-Port-Treffer. Er kann auch öffentliche Blocklisten wie FireHOL und Spamhaus importieren." }
         },
         {
           "@type": "Question",
@@ -183,7 +183,7 @@ section{position:relative}
 /* ---------- hero ---------- */
 .hero{padding:74px 0 30px;overflow:hidden}
 .hero .eyebrow{opacity:0;animation:rise .7s .05s both}
-.hero h1{font-size:clamp(44px,8vw,86px);margin:18px 0 0;max-width:14ch}
+.hero h1{font-size:clamp(44px,8vw,86px);margin:18px 0 0;max-width:100%}
 .hero h1 span{display:inline-block;opacity:0;animation:rise .8s both}
 .hero h1 span:nth-child(1){animation-delay:.12s}
 .hero h1 span:nth-child(2){animation-delay:.22s}
@@ -232,7 +232,7 @@ section{position:relative}
 
 /* ---------- generic section header ---------- */
 .sec{padding:84px 0}
-.sec__head{max-width:62ch}
+.sec__head{max-width:100ch}
 .sec h2{font-size:clamp(30px,4.6vw,46px);margin-top:14px}
 .sec__lead{color:var(--muted);font-size:19px;margin-top:16px}
 
@@ -474,10 +474,10 @@ section{position:relative}
       <h3>Schlechten Traffic blockieren.</h3>
       <p>Scanner, Brute-Force, Exploit-Sonden und Floods — gegen ein gleitendes Fenster abgeglichen und im Kernel über nftables verworfen. Wiederholungstäter werden härter bestraft.</p>
       <ul>
-        <li>HTTP scanners, SSH brute&#8209;force, exploit signatures, bad bots, rate&#8209;abuse, port scans &amp; honeypots</li>
-        <li>nftables bans with auto&#8209;expiry; <b>escalating</b> punishment for repeat offenders</li>
-        <li>Import FireHOL &amp; Spamhaus blocklists; CIDR allowlist so you never self&#8209;lock</li>
-        <li><b>Dry&#8209;run mode</b> — detect &amp; alert without blocking, so you trust it before you arm it</li>
+        <li>HTTP-Scanner, SSH-Brute-Force, Exploit-Signaturen, Bad Bots, Rate-Missbrauch, Portscans &amp; Honeypots</li>
+        <li>nftables-Sperren mit automatischem Ablauf; <b>eskalierende</b> Strafe für Wiederholungstäter</li>
+        <li>FireHOL &amp; Spamhaus-Listen importieren; CIDR-Allowlist, damit du dich nie selbst aussperrst</li>
+        <li><b>Dry-Run-Modus</b> — erkennen &amp; alarmieren ohne zu blockieren, damit du ihm traust, bevor du scharf schaltest</li>
       </ul>
     </div>
     <div class="pillar pillar--accent">
@@ -485,10 +485,10 @@ section{position:relative}
       <h3>Sehen, wann eine Site kaputtgeht.</h3>
       <p>Dasselbe Access-Log speist eine Health-Ansicht: Fehlerrate, Latenz und Traffic pro Site. Es alarmiert, wenn eine Site beeinträchtigt oder ausgefallen ist — und erneut, wenn sie sich erholt.</p>
       <ul>
-        <li><b>5xx ratio, p95 latency &amp; request rate</b> per site, on a <code>/sites</code> page</li>
-        <li>Degraded / down / recovered alerts with sustained + cooldown — no spam</li>
-        <li>A free embedded dashboard: the <b>Sentinel line</b>, ban ledger, live feed</li>
-        <li>Answers “is anything wrong?” — never “who's viewing what” (not analytics)</li>
+        <li><b>5xx-Quote, p95-Latenz &amp; Request-Rate</b> pro Site, auf einer <code>/sites</code>-Seite</li>
+        <li>Alarme bei beeinträchtigt / ausgefallen / erholt mit Haltezeit + Cooldown — kein Spam</li>
+        <li>Ein kostenloses eingebettetes Dashboard: die <b>Sentinel-Linie</b>, das Sperr-Log, der Live-Feed</li>
+        <li>Beantwortet „stimmt etwas nicht?“ — nie „wer sieht sich was an“ (keine Analytics)</li>
       </ul>
     </div>
   </div>
@@ -633,31 +633,31 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
   <div class="faq__list">
     <details class="qa" open>
       <summary>Was ist Edge Guardian?</summary>
-      <p>Edge Guardian is a free, open-source, single-binary edge guardian for Linux. From one log tail it does two things: <b>security</b> — detect scanners, brute-force and exploits, then ban the source IPs at the nftables firewall — and <b>edge health</b> — watch each site's 5xx ratio, latency and request rate, and alert when a site is degraded or down. It alerts via Telegram or email and ships with a built-in local dashboard.</p>
+      <p>Edge Guardian ist ein kostenloser, quelloffener Edge-Guardian für Linux in einer einzigen Binärdatei. Aus einem einzigen Log-Stream tut er zwei Dinge: <b>Sicherheit</b> — Scanner, Brute-Force und Exploits erkennen und dann die Quell-IPs an der nftables-Firewall sperren — und <b>Edge-Health</b> — die 5xx-Quote, Latenz und Request-Rate jeder Site überwachen und alarmieren, wenn eine Site beeinträchtigt oder ausgefallen ist. Er alarmiert per Telegram oder E-Mail und bringt ein integriertes lokales Dashboard mit.</p>
     </details>
     <details class="qa">
       <summary>Wie unterscheidet sich Edge Guardian von fail2ban und CrowdSec?</summary>
-      <p>fail2ban is regex-heavy, only sees one host, and has no dashboard. CrowdSec is powerful but requires an agent, a local API, a bouncer, and collections — and its dashboard is a paid feature. Edge Guardian is a single static binary with a one-line install, a dashboard included free, and it also monitors site health — not just security.</p>
+      <p>fail2ban ist regex-lastig, sieht nur einen Host und hat kein Dashboard. CrowdSec ist mächtig, erfordert aber einen Agent, eine lokale API, einen Bouncer und Collections — und sein Dashboard ist kostenpflichtig. Edge Guardian ist eine einzige statische Binärdatei mit Ein-Zeilen-Installation, einem kostenlos enthaltenen Dashboard, und überwacht zudem die Site-Health — nicht nur die Sicherheit.</p>
     </details>
     <details class="qa">
       <summary>Was erkennt Edge Guardian?</summary>
-      <p>HTTP scanner paths, SSH brute-force, exploit signatures (SQLi, path traversal, RCE probes, Log4Shell), bad bots by User-Agent (sqlmap, nikto, nuclei, masscan), rate-abuse / DoS-lite floods, port scans (distinct destination ports per IP), and honeypot-port hits. It can also import public blocklists such as FireHOL and Spamhaus.</p>
+      <p>HTTP-Scanner-Pfade, SSH-Brute-Force, Exploit-Signaturen (SQLi, Path Traversal, RCE-Sonden, Log4Shell), Bad Bots per User-Agent (sqlmap, nikto, nuclei, masscan), Rate-Missbrauch- / DoS-Lite-Floods, Portscans (verschiedene Zielports pro IP) und Honeypot-Port-Treffer. Er kann auch öffentliche Blocklisten wie FireHOL und Spamhaus importieren.</p>
     </details>
     <details class="qa">
       <summary>Überwacht es die Site-Health, nicht nur Angriffe?</summary>
-      <p>Yes. The same access log feeds a health branch that aggregates per-site status mix, 5xx error ratio, request rate and p95 latency, and alerts (with sustained + cooldown to avoid noise) when a site is degraded or down — and again when it recovers. It deliberately does <em>not</em> do web analytics: it answers “is anything wrong?”, not “who is viewing what?”.</p>
+      <p>Ja. Dasselbe Access-Log speist einen Health-Zweig, der pro Site die Statusverteilung, die 5xx-Fehlerquote, die Request-Rate und die p95-Latenz aggregiert und (mit Haltezeit + Cooldown gegen Rauschen) alarmiert, wenn eine Site beeinträchtigt oder ausgefallen ist — und erneut bei Erholung. Bewusst macht er <em>keine</em> Web-Analytics: er beantwortet „stimmt etwas nicht?“, nicht „wer sieht sich was an?“.</p>
     </details>
     <details class="qa">
       <summary>Ist Edge Guardian kostenlos?</summary>
-      <p>Yes. Edge Guardian is free and open source under the Apache-2.0 license — including the dashboard and the health monitoring.</p>
+      <p>Ja. Edge Guardian ist kostenlos und quelloffen unter der Apache-2.0-Lizenz — einschließlich Dashboard und Health-Monitoring.</p>
     </details>
     <details class="qa">
       <summary>Was braucht Edge Guardian zum Laufen?</summary>
-      <p>A Linux server with nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ or equivalent) and root or CAP_NET_ADMIN. No database, no agent, and no external service are required.</p>
+      <p>Ein Linux-Server mit nftables (Debian 11+, Ubuntu 20.04+, RHEL 9+ oder gleichwertig) und root oder CAP_NET_ADMIN. Keine Datenbank, kein Agent und kein externer Dienst sind erforderlich.</p>
     </details>
     <details class="qa">
       <summary>Wie installiere ich Edge Guardian?</summary>
-      <p>Run the one-line installer (<code>curl -fsSL .../install.sh | sudo bash</code>), install the <code>.deb</code> or <code>.rpm</code> package, or run the Docker image. Edge Guardian starts in dry-run mode so it observes and alerts before it blocks.</p>
+      <p>Führe den Ein-Zeilen-Installer aus (<code>curl -fsSL .../install.sh | sudo bash</code>), installiere das <code>.deb</code>- oder <code>.rpm</code>-Paket oder starte das Docker-Image. Edge Guardian startet im Dry-Run-Modus: er beobachtet und alarmiert, bevor er blockiert.</p>
     </details>
   </div>
 </div></section>
