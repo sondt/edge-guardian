@@ -61,12 +61,25 @@ EG_LINE_REGEX=""
 # the script). Skipped silently when there is no terminal (cron/CI) or no nginx.
 configure_nginx_logging() {
   command -v nginx >/dev/null 2>&1 || return 0
-  local snip="/etc/nginx/conf.d/edge-guardian-log.conf"
+  # The 00- prefix makes conf.d include this BEFORE any vhost that references the
+  # eg_guardian log_format (conf.d is parsed alphabetically; otherwise nginx -t fails with
+  # "unknown log format").
+  local snip="/etc/nginx/conf.d/00-edge-guardian-log.conf"
+  local oldsnip="/etc/nginx/conf.d/edge-guardian-log.conf"
+  # Migrate a snippet written by an older installer to the correctly-ordered name.
+  if [ -f "$oldsnip" ] && [ ! -f "$snip" ]; then
+    mv "$oldsnip" "$snip"
+    log "Renamed nginx log snippet → $snip (loads before vhosts)."
+  fi
 
-  # Already set up on a previous run → never re-prompt (re-install / auto-update stay
-  # silent). The chosen format is whatever the existing snippet uses.
+  # Already set up on a previous run → never re-prompt, but STILL point the daemon config
+  # at the $host log (so a re-install/upgrade self-corrects a config left on the old log).
   if [ -f "$snip" ]; then
-    log "nginx \$host log already configured ($snip) — leaving it as-is."
+    log "nginx \$host log already configured ($snip) — syncing config to it."
+    EG_LOG_PATH="/var/log/edge-guardian/access.log"
+    if ! grep -q 'escape=json' "$snip"; then
+      EG_LINE_REGEX='^(?P<host>\S+) (?P<ip>\S+) \S+ \S+ \[[^\]]+\] "(?:\S+) (?P<uri>\S+)[^"]*" (?P<status>\d+) (?P<bytes>\S+) "[^"]*" "(?P<ua>[^"]*)"'
+    fi
     return 0
   fi
   # Explicit opt-out (handy for scripted/headless installs).
