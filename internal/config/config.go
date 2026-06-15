@@ -158,7 +158,10 @@ func DefaultExploitPatterns() []string {
 		// Obvious XSS probes
 		`(<|%3c)script`,
 		`\bon(error|load|mouseover)(\s|%20)*=`,
-		`javascript:`,
+		// `javascript:` only when followed by a real sink — NOT the benign `javascript:void(0)`
+		// / `javascript:;` idiom (a common dev typo like href="/javascript:void(0)" would
+		// otherwise be banned). RE2 has no lookahead, so we enumerate the dangerous sinks.
+		`javascript:(\s|%20)*(alert|prompt|confirm|eval|atob|fetch|import|location|document|window|cookie|String\.fromCharCode)`,
 	}
 }
 
