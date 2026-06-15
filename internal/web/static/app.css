@@ -384,6 +384,7 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; lett
 .ledger__origin { line-height: 1.35; }
 .ledger__origin > span { display: block; }
 .ledger__place { font-size: 12px; color: var(--muted); }
+.ledger__ua { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
 .ledger__row--gone { animation: collapse 0.2s ease forwards; }
 .ledger__row--error td { color: var(--alert); font-family: var(--font-body); }
 @keyframes collapse { to { opacity: 0; } }

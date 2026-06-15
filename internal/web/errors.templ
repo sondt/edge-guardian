@@ -53,6 +53,8 @@ templ ErrorsPage(pd PageData, page ErrorPage) {
 								<th scope="col">Host</th>
 								<th scope="col">Path</th>
 								<th scope="col">IP</th>
+								<th scope="col">Origin</th>
+								<th scope="col">User agent</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -75,6 +77,13 @@ templ errorRow(e errorView) {
 		<td class="mono" data-label="Host">{ e.Host }</td>
 		<td class="mono ledger__reason" data-label="Path" title={ e.Path }>{ e.Path }</td>
 		<td class="mono" data-label="IP">{ e.IP }</td>
+		<td class="ledger__origin" data-label="Origin">
+			<span class="mono">{ e.Origin }</span>
+			if e.Location != "" {
+				<span class="ledger__place">{ e.Location }</span>
+			}
+		</td>
+		<td class="ledger__ua" data-label="User agent" title={ e.UA }>{ e.UA }</td>
 	</tr>
 }
 

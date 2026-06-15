@@ -15,6 +15,9 @@ type errorView struct {
 	Path       string
 	Status     string
 	StatusKind string // "is-4xx" | "is-5xx" — CSS tone
+	Origin     string // "US · AS8075 …" or "—" (GeoIP)
+	Location   string // "City, Region, Country" or "" (GeoIP)
+	UA         string // user-agent or "—"
 }
 
 func toErrorView(e ErrorReq) errorView {
@@ -25,6 +28,9 @@ func toErrorView(e ErrorReq) errorView {
 		Path:       orDash(e.Path),
 		Status:     strconv.Itoa(e.Status),
 		StatusKind: "is-" + statusClassOf(e.Status),
+		Origin:     originText(e.Country, e.ASN),
+		Location:   e.Location,
+		UA:         orDash(e.UA),
 	}
 }
 

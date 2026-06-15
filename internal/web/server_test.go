@@ -317,7 +317,7 @@ func TestBansPageShowsLocationAndFullPath(t *testing.T) {
 func TestErrorsPageRendersWithFilter(t *testing.T) {
 	s := newTestServer(t, &fakeDataSource{})
 	base := time.Now().Add(-time.Hour)
-	s.store.PushError(ErrorReq{At: base.Add(1 * time.Minute), Host: "shop.example.com", IP: "9.9.9.9", Path: "/wp-login.php", Status: 403})
+	s.store.PushError(ErrorReq{At: base.Add(1 * time.Minute), Host: "shop.example.com", IP: "9.9.9.9", Path: "/wp-login.php", Status: 403, UA: "sqlmap/1.7", Country: "US", ASN: "AS15169 Google", Location: "Mountain View, California, US"})
 	s.store.PushError(ErrorReq{At: base.Add(2 * time.Minute), Host: "api.example.com", IP: "8.8.8.8", Path: "/v1/orders", Status: 502})
 	cookies := login(t, s)
 
@@ -332,7 +332,8 @@ func TestErrorsPageRendersWithFilter(t *testing.T) {
 		t.Fatalf("GET /errors: want 200, got %d", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"/wp-login.php", "/v1/orders", "shop.example.com", "api.example.com", "502", "403"} {
+	for _, want := range []string{"/wp-login.php", "/v1/orders", "shop.example.com", "api.example.com", "502", "403",
+		"sqlmap/1.7", "AS15169 Google", "Mountain View, California, US"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("errors page missing %q", want)
 		}

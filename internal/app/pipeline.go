@@ -127,9 +127,22 @@ func (a *App) observeHealth(line string) {
 	upstreamErr := ev.Status == 502 || ev.Status == 503 || ev.Status == 504
 	now := a.now()
 	a.d.Health.Observe(ev.Host, ev.Status, ev.RequestTime, ev.Bytes, upstreamErr, now)
-	// Record client/server error responses for the /errors page.
+	// Record client/server error responses for the /errors page, enriched with the
+	// user-agent and GeoIP origin (lookup only on errors, never the all-requests path).
 	if ev.Status >= 400 {
-		a.d.Errors.PushError(now, ev.Host, ev.IP, ev.URI, ev.Status)
+		geo := a.d.GeoIP.Lookup(ev.IP)
+		country, asn := geoFields(geo)
+		a.d.Errors.PushError(ErrorEvent{
+			At:       now,
+			Host:     ev.Host,
+			IP:       ev.IP,
+			Path:     ev.URI,
+			UA:       ev.UA,
+			Country:  country,
+			ASN:      asn,
+			Location: geo.Place(),
+			Status:   ev.Status,
+		})
 	}
 }
 

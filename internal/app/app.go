@@ -72,15 +72,29 @@ type noopSink struct{}
 
 func (noopSink) Push(time.Time, string, string, string, string, string) {}
 
+// ErrorEvent is one 4xx/5xx request captured for the dashboard's /errors page, enriched
+// with the user-agent and GeoIP origin at capture time.
+type ErrorEvent struct {
+	At       time.Time
+	Host     string
+	IP       string
+	Path     string
+	UA       string
+	Country  string
+	ASN      string
+	Location string
+	Status   int
+}
+
 // ErrorSink receives each error request (4xx/5xx) for the dashboard's /errors page.
 type ErrorSink interface {
-	PushError(at time.Time, host, ip, path string, status int)
+	PushError(ErrorEvent)
 }
 
 // noopErrorSink ignores all error requests.
 type noopErrorSink struct{}
 
-func (noopErrorSink) PushError(time.Time, string, string, string, int) {}
+func (noopErrorSink) PushError(ErrorEvent) {}
 
 // Service is a background process that runs alongside the daemon (control socket, dashboard...).
 type Service interface {

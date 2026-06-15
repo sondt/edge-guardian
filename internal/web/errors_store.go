@@ -9,11 +9,15 @@ import (
 // ErrorReq is one error response (4xx/5xx) observed in the access log, kept for the
 // /errors page. Host is empty when the log format carries no $host.
 type ErrorReq struct {
-	At     time.Time
-	Host   string
-	IP     string
-	Path   string
-	Status int
+	At       time.Time
+	Host     string
+	IP       string
+	Path     string
+	UA       string // request user-agent (empty if the log omits it)
+	Country  string // GeoIP country (empty if unknown / disabled)
+	ASN      string // GeoIP ASN label, e.g. "AS24940 Hetzner"
+	Location string // GeoIP "City, Region, Country" (empty if unknown)
+	Status   int
 }
 
 // ErrorsDefaultPerPage is the default page size for the /errors table.
