@@ -40,7 +40,8 @@ func (d dashboardData) Bans() []web.Ban {
 		if detector == "" {
 			detector = "http" // tolerate entries written before the detector field existed
 		}
-		country, asn := geoFields(d.geo.Lookup(e.IP))
+		geo := d.geo.Lookup(e.IP)
+		country, asn := geoFields(geo)
 		out = append(out, web.Ban{
 			IP:        e.IP,
 			Detector:  detector,
@@ -49,6 +50,7 @@ func (d dashboardData) Bans() []web.Ban {
 			ExpiresAt: e.ExpiresAt,
 			Country:   country,
 			ASN:       asn,
+			Location:  geo.Place(),
 			Hits:      e.Hits,
 		})
 	}

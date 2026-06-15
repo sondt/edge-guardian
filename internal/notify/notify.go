@@ -14,6 +14,7 @@ type Event struct {
 	ExpiresAt time.Time
 	Country   string // optional (GeoIP)
 	ASN       string // optional (GeoIP)
+	Location  string // optional (GeoIP) — human "City, Region, Country"
 	DryRun    bool   // true: only "WOULD ban", no actual blocking
 }
 

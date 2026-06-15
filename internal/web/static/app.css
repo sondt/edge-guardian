@@ -128,6 +128,9 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; lett
 
 .host { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
 
+/* hamburger: desktop hides it (nav is always visible); mobile shows it */
+.nav-toggle { display: none; }
+
 .iconbtn {
   display: inline-grid; place-items: center;
   width: 32px; height: 32px;
@@ -191,8 +194,10 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; lett
 }
 
 /* ---------- shell / layout ---------- */
+/* Full-bleed: the instrument fills the viewport. Padding keeps content off the edges
+   while the panels themselves stretch to the full available width. */
 .shell {
-  max-width: var(--maxw);
+  width: 100%;
   margin: 0 auto;
   padding: clamp(20px, 3vw, 32px) clamp(16px, 4vw, 40px) 64px;
   display: flex; flex-direction: column; gap: 24px;
@@ -211,7 +216,9 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; lett
 /* ---------- readout cards ---------- */
 .readouts {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Fluid: cards reflow to as many columns as fit, never narrower than 220px.
+     Removes the hard 4→2→1 breakpoint jumps — truly responsive at any width. */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--gap);
 }
 .card {
@@ -350,7 +357,20 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; lett
 .ledger__row:last-child td { border-bottom: 0; }
 .ledger__act { text-align: right; }
 .ledger__expires.is-expired { color: var(--alert); }
-.ledger__reason { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+/* Show the full request path / reason. Wrap and break long URLs so the value is
+   readable without hovering — no more ellipsis-truncated paths. Stays a table cell so
+   the column keeps its alignment. */
+.ledger__reason {
+  max-width: 360px;
+  color: var(--muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+/* Origin stacks the network line over the human location on two lines. */
+.ledger__origin { line-height: 1.35; }
+.ledger__origin > span { display: block; }
+.ledger__place { font-size: 12px; color: var(--muted); }
 .ledger__row--gone { animation: collapse 0.2s ease forwards; }
 .ledger__row--error td { color: var(--alert); font-family: var(--font-body); }
 @keyframes collapse { to { opacity: 0; } }
@@ -398,7 +418,19 @@ body[data-state="alert"] .topbar { box-shadow: inset 0 2px 0 0 var(--alert); }
   .detectors { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
-  .nav { display: none; }
+  /* Nav folds into a hamburger-triggered dropdown instead of disappearing. */
+  .nav-toggle { display: inline-grid; }
+  .nav {
+    display: none;
+    position: absolute; top: 56px; left: 0; right: 0; z-index: 19;
+    flex-direction: column; align-items: stretch; gap: 2px;
+    padding: 8px clamp(16px, 4vw, 40px);
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow-card);
+  }
+  .nav.is-open { display: flex; }
+  .nav__link { padding: 10px 12px; font-size: 14px; }
   .readouts { grid-template-columns: 1fr 1fr; }
   .feed__row {
     grid-template-columns: 64px 1fr auto;

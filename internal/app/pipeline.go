@@ -84,7 +84,8 @@ func (a *App) ban(det *Detector, addr netip.Addr, ip, reason string, hits int, n
 		a.d.Logger.Error("save state after ban", "ip", ip, "err", err)
 	}
 
-	country, asn := geoFields(a.d.GeoIP.Lookup(ip))
+	geo := a.d.GeoIP.Lookup(ip)
+	country, asn := geoFields(geo)
 
 	action := "banned"
 	if a.d.DryRun {
@@ -92,10 +93,10 @@ func (a *App) ban(det *Detector, addr netip.Addr, ip, reason string, hits int, n
 	}
 	a.d.Events.Push(now, ip, det.Name, action, country, asn)
 
-	a.notifyEvent(ip, reason, entry.Hits, expires, country, asn)
+	a.notifyEvent(ip, reason, entry.Hits, expires, country, asn, geo.Place())
 }
 
-func (a *App) notifyEvent(ip, reason string, hits int, expires time.Time, country, asn string) {
+func (a *App) notifyEvent(ip, reason string, hits int, expires time.Time, country, asn, location string) {
 	ev := notify.Event{
 		IP:        ip,
 		URI:       reason,
@@ -103,6 +104,7 @@ func (a *App) notifyEvent(ip, reason string, hits int, expires time.Time, countr
 		ExpiresAt: expires,
 		Country:   country,
 		ASN:       asn,
+		Location:  location,
 		DryRun:    a.d.DryRun,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

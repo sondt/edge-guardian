@@ -82,6 +82,33 @@ type Result struct {
 	IsInternal bool    // internal IP (private/loopback/link-local).
 }
 
+// Place formats the human-readable location "City, Region, Country" from the resolved
+// fields, skipping empties and dropping duplicates (some DBs repeat the region in the
+// city). Internal IPs and fully-unknown results return "".
+func (r Result) Place() string {
+	if r.IsInternal {
+		return ""
+	}
+	parts := make([]string, 0, 3)
+	for _, p := range []string{r.City, r.Region, r.Country} {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		dup := false
+		for _, seen := range parts {
+			if strings.EqualFold(seen, p) {
+				dup = true
+				break
+			}
+		}
+		if !dup {
+			parts = append(parts, p)
+		}
+	}
+	return strings.Join(parts, ", ")
+}
+
 // ASNLabel formats ASN + organization into a short label: "AS24940 Hetzner" / "AS24940" /
 // "Hetzner" / "" (unknown).
 func (r Result) ASNLabel() string {

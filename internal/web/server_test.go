@@ -284,6 +284,36 @@ func TestUnbanHappyPath(t *testing.T) {
 	}
 }
 
+func TestBansPageShowsLocationAndFullPath(t *testing.T) {
+	now := time.Now()
+	longPath := "/cgi-bin/magicBox.cgi/action/getSnapshot/very/long/probe/path/that/exceeds/the/old/limit"
+	data := &fakeDataSource{bans: []Ban{{
+		IP: "103.3.60.114", Detector: "http", Reason: longPath,
+		FirstSeen: now, ExpiresAt: now.Add(24 * time.Hour),
+		Country: "SG", ASN: "AS63949 Akamai", Location: "Singapore",
+	}}}
+	s := newTestServer(t, data)
+	cookies := login(t, s)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/bans", nil)
+	for _, c := range cookies {
+		req.AddCookie(c)
+	}
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /bans: want 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	// The full path must be present verbatim (no server-side truncation) and the GeoIP
+	// location must render alongside the network origin.
+	for _, want := range []string{longPath, "Singapore", "AS63949 Akamai"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("bans page missing %q", want)
+		}
+	}
+}
+
 func TestUnbanRejectedWithoutCSRF(t *testing.T) {
 	data := &fakeDataSource{bans: []Ban{{IP: "185.1.2.3", Detector: "http"}}}
 	s := newTestServer(t, data)

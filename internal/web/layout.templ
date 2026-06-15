@@ -41,7 +41,17 @@ templ TopBar(pd PageData) {
 				<span class="wordmark__mark" aria-hidden="true">◳</span>
 				<span class="wordmark__text">Edge Guardian</span>
 			</a>
-			<nav class="nav" aria-label="Primary">
+			<button
+				type="button"
+				class="iconbtn nav-toggle"
+				data-nav-toggle
+				aria-label="Toggle navigation menu"
+				aria-controls="primary-nav"
+				aria-expanded="false"
+			>
+				<span class="iconbtn__glyph" aria-hidden="true">☰</span>
+			</button>
+			<nav id="primary-nav" class="nav" aria-label="Primary">
 				@navLink("/", "Overview", pd.Nav == "overview")
 				@navLink("/bans", "Bans", pd.Nav == "bans")
 				@navLink("/feed", "Feed", pd.Nav == "feed")

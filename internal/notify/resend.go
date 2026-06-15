@@ -142,6 +142,9 @@ func textBody(ev Event) string {
 	if ev.Country != "" || ev.ASN != "" {
 		fmt.Fprintf(&b, "Origin: %s %s\n", ev.Country, ev.ASN)
 	}
+	if ev.Location != "" {
+		fmt.Fprintf(&b, "Location: %s\n", ev.Location)
+	}
 	if ev.URI != "" {
 		fmt.Fprintf(&b, "Reason: %s\n", ev.URI)
 	}
@@ -167,6 +170,7 @@ func htmlBody(ev Event) string {
 	}
 	row("IP", ev.IP)
 	row("Origin", strings.TrimSpace(ev.Country+" "+ev.ASN))
+	row("Location", ev.Location)
 	row("Reason", ev.URI)
 	row("Hits", fmt.Sprintf("%d", ev.Hits))
 	if !ev.DryRun && !ev.ExpiresAt.IsZero() {

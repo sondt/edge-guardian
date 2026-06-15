@@ -32,6 +32,20 @@ func TestFormatMessage(t *testing.T) {
 		}
 	})
 
+	t.Run("includes location", func(t *testing.T) {
+		msg := formatMessage(Event{IP: "1.2.3.4", Location: "Frankfurt, Hesse, Germany"})
+		if !strings.Contains(msg, "Location: Frankfurt, Hesse, Germany") {
+			t.Fatalf("message missing location:\n%s", msg)
+		}
+	})
+
+	t.Run("omits empty location", func(t *testing.T) {
+		msg := formatMessage(Event{IP: "1.2.3.4"})
+		if strings.Contains(msg, "Location:") {
+			t.Fatalf("message should not mention location when empty:\n%s", msg)
+		}
+	})
+
 	t.Run("escapes html", func(t *testing.T) {
 		msg := formatMessage(Event{IP: "1.1.1.1", URI: "/<script>&"})
 		if strings.Contains(msg, "<script>") || !strings.Contains(msg, "&lt;script&gt;") {

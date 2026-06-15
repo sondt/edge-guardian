@@ -27,7 +27,7 @@ func TestResend_Notify(t *testing.T) {
 	r.endpoint = srv.URL
 
 	ev := Event{IP: "1.2.3.4", URI: "/wp-login.php", Hits: 3, Country: "VN", ASN: "AS123 Foo",
-		ExpiresAt: time.Date(2024, 1, 8, 0, 0, 0, 0, time.UTC)}
+		Location: "Hanoi, Vietnam", ExpiresAt: time.Date(2024, 1, 8, 0, 0, 0, 0, time.UTC)}
 	if err := r.Notify(context.Background(), ev); err != nil {
 		t.Fatalf("Notify: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestResend_Notify(t *testing.T) {
 	if !strings.Contains(payload.Subject, "1.2.3.4") {
 		t.Fatalf("subject missing ip: %q", payload.Subject)
 	}
-	for _, want := range []string{"1.2.3.4", "/wp-login.php", "VN", "AS123 Foo"} {
+	for _, want := range []string{"1.2.3.4", "/wp-login.php", "VN", "AS123 Foo", "Hanoi, Vietnam"} {
 		if !strings.Contains(payload.HTML, want) || !strings.Contains(payload.Text, want) {
 			t.Fatalf("body missing %q", want)
 		}

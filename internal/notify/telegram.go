@@ -92,6 +92,9 @@ func formatMessage(ev Event) string {
 	if ev.Country != "" || ev.ASN != "" {
 		fmt.Fprintf(&b, "Geo: %s %s\n", escape(ev.Country), escape(ev.ASN))
 	}
+	if ev.Location != "" {
+		fmt.Fprintf(&b, "Location: %s\n", escape(ev.Location))
+	}
 	if ev.URI != "" {
 		fmt.Fprintf(&b, "Sample: <code>%s</code>\n", escape(ev.URI))
 	}

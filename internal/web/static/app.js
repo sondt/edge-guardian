@@ -35,11 +35,40 @@
     }
   }
 
+  // Mobile nav: the hamburger toggles the primary nav dropdown. On desktop the nav is
+  // always visible and the button is hidden, so this is a no-op there.
+  function toggleNav(btn) {
+    var nav = document.getElementById("primary-nav");
+    if (!nav) return;
+    var open = nav.classList.toggle("is-open");
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
   document.addEventListener("click", function (ev) {
-    var btn = ev.target.closest ? ev.target.closest("[data-theme-toggle]") : null;
-    if (btn) {
+    var closest = ev.target.closest ? ev.target.closest.bind(ev.target) : null;
+    if (!closest) return;
+
+    var themeBtn = closest("[data-theme-toggle]");
+    if (themeBtn) {
       ev.preventDefault();
       toggle();
+      return;
+    }
+
+    var navBtn = closest("[data-nav-toggle]");
+    if (navBtn) {
+      ev.preventDefault();
+      toggleNav(navBtn);
+      return;
+    }
+
+    // A tap on a nav link closes the open dropdown so the next page isn't left with a
+    // stale-open menu.
+    if (closest(".nav__link")) {
+      var nav = document.getElementById("primary-nav");
+      var hb = document.querySelector("[data-nav-toggle]");
+      if (nav) nav.classList.remove("is-open");
+      if (hb) hb.setAttribute("aria-expanded", "false");
     }
   });
 

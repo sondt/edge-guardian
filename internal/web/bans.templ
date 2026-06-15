@@ -74,7 +74,12 @@ templ BanRow(b banView) {
 		<td class="mono ledger__reason" data-label="Reason" title={ b.Reason }>{ orDash(b.Reason) }</td>
 		<td class="mono" data-label="First seen">{ b.FirstSeenHM }</td>
 		<td class={ "mono", "ledger__expires", templ.KV("is-expired", b.Expired) } data-label="Expires">{ b.Expires }</td>
-		<td class="mono" data-label="Origin">{ b.Origin }</td>
+		<td class="ledger__origin" data-label="Origin">
+			<span class="mono">{ b.Origin }</span>
+			if b.Location != "" {
+				<span class="ledger__place">{ b.Location }</span>
+			}
+		</td>
 		<td class="mono ledger__act" data-label="Hits">{ fmt.Sprintf("%d", b.Hits) }</td>
 		<td class="ledger__act">
 			<button

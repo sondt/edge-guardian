@@ -114,6 +114,29 @@ func TestResultASNLabel(t *testing.T) {
 	}
 }
 
+func TestResultPlace(t *testing.T) {
+	tests := []struct {
+		name string
+		r    Result
+		want string
+	}{
+		{"full", Result{City: "Frankfurt", Region: "Hesse", Country: "Germany"}, "Frankfurt, Hesse, Germany"},
+		{"country only", Result{Country: "Vietnam"}, "Vietnam"},
+		{"city and country", Result{City: "Hanoi", Country: "Vietnam"}, "Hanoi, Vietnam"},
+		{"dedupes repeated", Result{City: "Singapore", Region: "Singapore", Country: "Singapore"}, "Singapore"},
+		{"trims blanks", Result{City: "  ", Region: "Bavaria", Country: "DE"}, "Bavaria, DE"},
+		{"internal is empty", Result{IsInternal: true, Country: "Germany"}, ""},
+		{"empty", Result{}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.r.Place(); got != tt.want {
+				t.Fatalf("Place(%+v)=%q want %q", tt.r, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestLooksLikeHosting(t *testing.T) {
 	for _, org := range []string{"DigitalOcean LLC", "Hetzner Online GmbH", "Amazon AWS", "Some VPS Hosting"} {
 		if !looksLikeHosting(org) {

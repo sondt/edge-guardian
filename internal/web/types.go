@@ -53,6 +53,7 @@ type Ban struct {
 	ExpiresAt time.Time
 	Country   string
 	ASN       string
+	Location  string // human-readable "City, Region, Country" from GeoIP; may be empty
 	Hits      int
 }
 

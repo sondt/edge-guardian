@@ -145,4 +145,9 @@ type Metrics struct {
 
 	TopOrigins []OriginRow   // ranked, highest first (capped)
 	Detectors  []DetectorRow // ranked, highest first
+
+	// PeriodKey is the URL query value for the selected time window ("1h", "24h", "7d", "30d").
+	// PeriodLabel is the short display string used in readout card labels.
+	PeriodKey   string
+	PeriodLabel string
 }
