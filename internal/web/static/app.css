@@ -311,6 +311,19 @@ h1, h2, h3 { margin: 0; font-family: var(--font-display); font-weight: 600; lett
 .tag--banned { color: var(--alert); border-color: rgb(var(--alert-rgb) / 0.35); background: rgb(var(--alert-rgb) / 0.07); }
 .tag--dry { color: var(--muted); border-style: dashed; }
 .tag--detector { font-family: var(--font-mono); }
+.tag--status { font-family: var(--font-mono); }
+.tag--status.is-5xx { color: var(--alert); border-color: rgb(var(--alert-rgb) / 0.35); background: rgb(var(--alert-rgb) / 0.07); }
+.tag--status.is-4xx { color: var(--muted); }
+
+/* ---------- pager (error log pagination) ---------- */
+.pager {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; border-top: 1px solid var(--line); flex-wrap: wrap;
+}
+.pager__info { color: var(--muted); font-size: 12px; }
+.pager__nav { display: flex; align-items: center; gap: 8px; }
+.pager__page { color: var(--muted); font-size: 12px; }
+.btn.is-disabled { opacity: 0.45; pointer-events: none; }
 
 /* ---------- ledger ---------- */
 .panel__head--ledger { align-items: center; }

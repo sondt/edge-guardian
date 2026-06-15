@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/a-h/templ"
@@ -101,6 +102,30 @@ func (s *Server) sitesPage(w http.ResponseWriter, r *http.Request) {
 	}
 	sites := toSiteViews(s.data.SiteHealth())
 	s.render(w, r, SitesPage(pd, sites))
+}
+
+func (s *Server) errorsPage(w http.ResponseWriter, r *http.Request) {
+	m := s.store.Snapshot()
+	pd, ok := s.pageData(w, r, "errors", "Error requests", m)
+	if !ok {
+		return
+	}
+	q := r.URL.Query()
+	page := 1
+	if p, err := strconv.Atoi(q.Get("page")); err == nil && p > 0 {
+		page = p
+	}
+	class := q.Get("class")
+	if class != "4xx" && class != "5xx" {
+		class = ""
+	}
+	filter := ErrorFilter{
+		Host:   strings.TrimSpace(q.Get("host")),
+		Class:  class,
+		Search: strings.TrimSpace(q.Get("q")),
+		Page:   page,
+	}
+	s.render(w, r, ErrorsPage(pd, s.store.Errors(filter)))
 }
 
 // pSentinel returns just the Sentinel line fragment for HTMX polling.

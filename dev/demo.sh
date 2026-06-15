@@ -108,6 +108,7 @@ err_ratio_pct = 5
 latency_p95_ms = 2000
 sustained_mins = 5
 cooldown_mins = 30
+discover_nginx = false   # demo: use only the seeded hosts, don't scan the dev machine's nginx
 
 [state]
 path = "$PWD/$RUN/state.json"

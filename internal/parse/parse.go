@@ -37,6 +37,7 @@ type LineParser struct {
 	uaIdx     int // -1 if the regex has no ua group
 	statusIdx int // -1 if no status group
 	bytesIdx  int // -1 if no bytes group
+	hostIdx   int // -1 if no host group
 }
 
 // NewLineParser compiles the pattern and determines the group positions.
@@ -45,7 +46,7 @@ func NewLineParser(pattern string) (*LineParser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile line_regex: %w", err)
 	}
-	p := &LineParser{re: re, ipIdx: -1, uriIdx: -1, uaIdx: -1, statusIdx: -1, bytesIdx: -1}
+	p := &LineParser{re: re, ipIdx: -1, uriIdx: -1, uaIdx: -1, statusIdx: -1, bytesIdx: -1, hostIdx: -1}
 	for i, name := range re.SubexpNames() {
 		switch name {
 		case "ip":
@@ -58,6 +59,8 @@ func NewLineParser(pattern string) (*LineParser, error) {
 			p.statusIdx = i
 		case "bytes":
 			p.bytesIdx = i
+		case "host":
+			p.hostIdx = i
 		}
 	}
 	if p.ipIdx == -1 || p.uriIdx == -1 {
@@ -98,6 +101,9 @@ func (p *LineParser) parseRegex(line string) (Event, bool) {
 	}
 	if p.bytesIdx != -1 {
 		ev.Bytes, _ = strconv.ParseUint(m[p.bytesIdx], 10, 64)
+	}
+	if p.hostIdx != -1 {
+		ev.Host = m[p.hostIdx]
 	}
 	return ev, true
 }

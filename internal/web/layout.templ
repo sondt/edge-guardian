@@ -57,6 +57,7 @@ templ TopBar(pd PageData) {
 				@navLink("/feed", "Feed", pd.Nav == "feed")
 				if pd.HealthEnabled {
 					@navLink("/sites", "Sites", pd.Nav == "sites")
+					@navLink("/errors", "Errors", pd.Nav == "errors")
 				}
 				@navLink("/detectors", "Detectors", pd.Nav == "detectors")
 			</nav>

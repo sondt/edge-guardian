@@ -1,0 +1,120 @@
+package web
+
+import "fmt"
+
+// ErrorsPage lists recent 4xx/5xx requests with a host/status/search filter and
+// pagination. Read-only: it answers "what's failing and where", complementing the
+// per-site rollup on /sites.
+templ ErrorsPage(pd PageData, page ErrorPage) {
+	@Layout(pd) {
+		<section class="panel">
+			<div class="panel__head panel__head--ledger">
+				<h2 class="panel__title">
+					Error requests
+					<span class="count mono">{ fmt.Sprintf("· %d", page.TotalAll) }</span>
+				</h2>
+				<form class="filters" method="get" action="/errors" role="search">
+					<select class="select" name="host" aria-label="Filter by host">
+						<option value="">All hosts</option>
+						for _, h := range page.Hosts {
+							if h == page.Filter.Host {
+								<option value={ h } selected>{ h }</option>
+							} else {
+								<option value={ h }>{ h }</option>
+							}
+						}
+					</select>
+					<select class="select" name="class" aria-label="Filter by status class">
+						@classOption("", "All status", page.Filter.Class)
+						@classOption("4xx", "4xx", page.Filter.Class)
+						@classOption("5xx", "5xx", page.Filter.Class)
+					</select>
+					<input
+						class="input mono"
+						type="search"
+						name="q"
+						value={ page.Filter.Search }
+						placeholder="search path / ip"
+						aria-label="Search errors"
+						autocomplete="off"
+					/>
+					<button class="btn" type="submit">Filter</button>
+				</form>
+			</div>
+			if page.Total == 0 {
+				@errorsEmpty(page.TotalAll)
+			} else {
+				<div class="table-wrap">
+					<table class="ledger">
+						<thead>
+							<tr>
+								<th scope="col">Time</th>
+								<th scope="col">Status</th>
+								<th scope="col">Host</th>
+								<th scope="col">Path</th>
+								<th scope="col">IP</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, e := range toErrorViews(page.Items) {
+								@errorRow(e)
+							}
+						</tbody>
+					</table>
+				</div>
+				@errorsPager(page)
+			}
+		</section>
+	}
+}
+
+templ errorRow(e errorView) {
+	<tr class="ledger__row">
+		<td class="mono" data-label="Time">{ e.TimeHM }</td>
+		<td data-label="Status"><span class={ "tag", "tag--status", e.StatusKind }>{ e.Status }</span></td>
+		<td class="mono" data-label="Host">{ e.Host }</td>
+		<td class="mono ledger__reason" data-label="Path" title={ e.Path }>{ e.Path }</td>
+		<td class="mono" data-label="IP">{ e.IP }</td>
+	</tr>
+}
+
+templ classOption(value, label, selected string) {
+	if value == selected {
+		<option value={ value } selected>{ label }</option>
+	} else {
+		<option value={ value }>{ label }</option>
+	}
+}
+
+templ errorsPager(page ErrorPage) {
+	<div class="pager">
+		<span class="pager__info mono">{ errorRangeLabel(page) }</span>
+		<div class="pager__nav">
+			if page.Page > 1 {
+				<a class="btn" href={ templ.SafeURL(errorPageURL(page.Filter, page.Page-1)) }>← Prev</a>
+			} else {
+				<span class="btn is-disabled" aria-disabled="true">← Prev</span>
+			}
+			<span class="pager__page mono">{ fmt.Sprintf("%d / %d", page.Page, page.Pages) }</span>
+			if page.Page < page.Pages {
+				<a class="btn" href={ templ.SafeURL(errorPageURL(page.Filter, page.Page+1)) }>Next →</a>
+			} else {
+				<span class="btn is-disabled" aria-disabled="true">Next →</span>
+			}
+		</div>
+	</div>
+}
+
+templ errorsEmpty(totalAll int) {
+	if totalAll == 0 {
+		<div class="empty">
+			<p class="empty__title">No error requests recorded.</p>
+			<p class="empty__hint">4xx/5xx responses seen in the access log will appear here.</p>
+		</div>
+	} else {
+		<div class="empty">
+			<p class="empty__title">No errors match your filter.</p>
+			<p class="empty__hint">Clear the filters to see all { fmt.Sprintf("%d", totalAll) } recorded errors.</p>
+		</div>
+	}
+}

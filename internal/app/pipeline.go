@@ -125,7 +125,12 @@ func (a *App) observeHealth(line string) {
 		return
 	}
 	upstreamErr := ev.Status == 502 || ev.Status == 503 || ev.Status == 504
-	a.d.Health.Observe(ev.Host, ev.Status, ev.RequestTime, ev.Bytes, upstreamErr, a.now())
+	now := a.now()
+	a.d.Health.Observe(ev.Host, ev.Status, ev.RequestTime, ev.Bytes, upstreamErr, now)
+	// Record client/server error responses for the /errors page.
+	if ev.Status >= 400 {
+		a.d.Errors.PushError(now, ev.Host, ev.IP, ev.URI, ev.Status)
+	}
 }
 
 // evaluateHealth snapshots the sites and sends alerts (firing/recovered) via the Notifier.

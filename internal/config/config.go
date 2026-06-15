@@ -225,6 +225,16 @@ type HealthConfig struct {
 	LatencyP95Ms  int      `toml:"latency_p95_ms"` // p95 threshold (ms); 0 = ignore latency
 	SustainedMins int      `toml:"sustained_mins"` // how long the condition must hold before alerting
 	CooldownMins  int      `toml:"cooldown_mins"`  // stay silent after alerting
+
+	// DiscoverNginx, when unset or true, lists/counts the sites nginx serves via `nginx -T`
+	// (used only when `sites` is empty). Set false to keep the "track any host" behavior.
+	DiscoverNginx  *bool    `toml:"discover_nginx"`
+	NginxConfGlobs []string `toml:"nginx_conf_globs"` // fallback config globs if `nginx -T` is unavailable
+}
+
+// DiscoverSites reports whether to auto-discover nginx server_names (default true).
+func (c HealthConfig) DiscoverSites() bool {
+	return c.DiscoverNginx == nil || *c.DiscoverNginx
 }
 
 // Helpers converting config thresholds into the form the health package uses (ratio 0..1, seconds).

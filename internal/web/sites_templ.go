@@ -64,7 +64,7 @@ func SitesPage(pd PageData, sites []siteView) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if len(sites) == 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"empty\"><p class=\"empty__title\">No site data yet</p><p class=\"empty__hint\">Enable <code>[health]</code> and point Edge Guardian at an access log carrying host + status. For latency and per-site stats, switch nginx to the JSON log format.</p></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"empty\"><p class=\"empty__title\">No site data yet</p><p class=\"empty__hint\">Enable <code>[health]</code> and point Edge Guardian at an access log carrying host + status. Domains are listed from <code>nginx -T</code>; for per-site metrics, add <code>$host</code> to your nginx <code>log_format</code> (or use JSON logs).</p></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -144,7 +144,7 @@ func siteCard(s siteView) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(s.Host)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 37, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 38, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +179,7 @@ func siteCard(s siteView) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(s.StatusDot)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 39, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 40, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -192,7 +192,7 @@ func siteCard(s siteView) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(s.Status)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 40, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 41, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -210,7 +210,7 @@ func siteCard(s siteView) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(s.SparkPoints)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 46, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 47, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 			if templ_7745c5c3_Err != nil {
@@ -286,7 +286,7 @@ func kv(k, v string) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(k)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 67, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 68, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -299,7 +299,7 @@ func kv(k, v string) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(v)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 68, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/sites.templ`, Line: 69, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {

@@ -102,3 +102,14 @@ func (w webSink) Push(at time.Time, ip, detector, action, country, asn string) {
 		ASN:      asn,
 	})
 }
+
+// PushError records a 4xx/5xx request for the dashboard's /errors page.
+func (w webSink) PushError(at time.Time, host, ip, path string, status int) {
+	w.store.PushError(web.ErrorReq{
+		At:     at,
+		Host:   host,
+		IP:     ip,
+		Path:   path,
+		Status: status,
+	})
+}

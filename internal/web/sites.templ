@@ -17,7 +17,8 @@ templ SitesPage(pd PageData, sites []siteView) {
 					<p class="empty__title">No site data yet</p>
 					<p class="empty__hint">
 						Enable <code>[health]</code> and point Edge Guardian at an access log carrying
-						host + status. For latency and per-site stats, switch nginx to the JSON log format.
+						host + status. Domains are listed from <code>nginx -T</code>; for per-site metrics,
+						add <code>$host</code> to your nginx <code>log_format</code> (or use JSON logs).
 					</p>
 				</div>
 			} else {

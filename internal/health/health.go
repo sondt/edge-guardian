@@ -40,10 +40,15 @@ func New(c Config) *Health {
 		now = time.Now
 	}
 	var allow map[string]struct{}
+	sites := make(map[string]*SiteSeries)
 	if len(c.Sites) > 0 {
 		allow = make(map[string]struct{}, len(c.Sites))
 		for _, s := range c.Sites {
 			allow[s] = struct{}{}
+			// Pre-register each declared/discovered site so it shows on the dashboard
+			// (as "Idle") even before any request — the count reflects every site nginx
+			// serves, not only those that have seen traffic.
+			sites[s] = newSeries(c.WindowMins)
 		}
 	}
 	return &Health{
@@ -51,7 +56,7 @@ func New(c Config) *Health {
 		allow:      allow,
 		th:         c.Thresholds,
 		now:        now,
-		sites:      make(map[string]*SiteSeries),
+		sites:      sites,
 	}
 }
 
@@ -155,6 +160,11 @@ func (h *Health) Prune() {
 	nowMinute := minuteOf(h.now())
 	fromMinute := nowMinute - int64(h.windowMins) + 1
 	for host, s := range h.sites {
+		if h.allow != nil {
+			if _, declared := h.allow[host]; declared {
+				continue // keep declared/discovered sites visible (Idle) even with no traffic
+			}
+		}
 		if s.aggregate(fromMinute, nowMinute).Reqs == 0 {
 			delete(h.sites, host)
 		}

@@ -40,6 +40,10 @@ type Deps struct {
 	// Events receives detection events (for the dashboard); nil => ignored.
 	Events EventSink
 
+	// Errors receives 4xx/5xx requests seen in the access log (for the /errors page);
+	// nil => ignored.
+	Errors ErrorSink
+
 	// Health branch (optional). Health == nil => fully disabled. Reads EVERY log line to
 	// aggregate per-site counters and alert on status — does NOT ban IPs.
 	Health            *health.Health
@@ -67,6 +71,16 @@ type EventSink interface {
 type noopSink struct{}
 
 func (noopSink) Push(time.Time, string, string, string, string, string) {}
+
+// ErrorSink receives each error request (4xx/5xx) for the dashboard's /errors page.
+type ErrorSink interface {
+	PushError(at time.Time, host, ip, path string, status int)
+}
+
+// noopErrorSink ignores all error requests.
+type noopErrorSink struct{}
+
+func (noopErrorSink) PushError(time.Time, string, string, string, int) {}
 
 // Service is a background process that runs alongside the daemon (control socket, dashboard...).
 type Service interface {
@@ -99,6 +113,9 @@ func New(d Deps) *App {
 	}
 	if d.Events == nil {
 		d.Events = noopSink{}
+	}
+	if d.Errors == nil {
+		d.Errors = noopErrorSink{}
 	}
 	return &App{d: d, now: now}
 }

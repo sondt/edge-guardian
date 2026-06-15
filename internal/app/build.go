@@ -13,6 +13,7 @@ import (
 	"github.com/sondt/edge-guardian/internal/enforce"
 	"github.com/sondt/edge-guardian/internal/geoip"
 	"github.com/sondt/edge-guardian/internal/health"
+	"github.com/sondt/edge-guardian/internal/nginxconf"
 	"github.com/sondt/edge-guardian/internal/notify"
 	"github.com/sondt/edge-guardian/internal/parse"
 	"github.com/sondt/edge-guardian/internal/state"
@@ -114,7 +115,9 @@ func Build(cfg config.Config, logger *slog.Logger) (*Components, error) {
 	}
 	if cfg.Dashboard.Enabled {
 		store = web.NewStore(eventRetention)
-		d.Events = webSink{store: store}
+		sink := webSink{store: store}
+		d.Events = sink
+		d.Errors = sink
 		maybeSeedDemo(store, time.Now()) // no-op unless EG_DEMO_SEED=1
 	}
 
@@ -129,9 +132,19 @@ func Build(cfg config.Config, logger *slog.Logger) (*Components, error) {
 			return nil, fmt.Errorf("health line_regex: %w", err)
 		}
 		th := health.Thresholds{Err5xxRatio: cfg.Health.ErrRatio(), P95Sec: cfg.Health.P95Sec()}
+		// Site list: an explicit [health] sites wins; otherwise discover the domains nginx
+		// actually serves (via `nginx -T`) so the dashboard lists/counts every website even
+		// before traffic. Empty discovery → fall back to "track any host seen in the log".
+		sites := cfg.Health.Sites
+		if len(sites) == 0 && cfg.Health.DiscoverSites() {
+			sites = nginxconf.Discover(cfg.Health.NginxConfGlobs)
+			if len(sites) > 0 {
+				logger.Info("health: discovered nginx sites", "count", len(sites))
+			}
+		}
 		healthSvc = health.New(health.Config{
 			WindowMins: cfg.Health.WindowMins,
-			Sites:      cfg.Health.Sites,
+			Sites:      sites,
 			Thresholds: th,
 		})
 		d.Health = healthSvc

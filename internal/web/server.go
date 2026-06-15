@@ -124,6 +124,7 @@ func (s *Server) buildRouter() http.Handler {
 		r.Get("/bans", s.bansPage)
 		r.Get("/feed", s.feedPage)
 		r.Get("/sites", s.sitesPage)
+		r.Get("/errors", s.errorsPage)
 		r.Get("/detectors", s.detectorsPage)
 
 		// HTMX polling partials — HTML fragments, never JSON.

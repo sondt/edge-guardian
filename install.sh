@@ -49,6 +49,75 @@ fetch() {
   fi
 }
 
+# EG_LOG_PATH / EG_LINE_REGEX feed the generated [log] config. Default: nginx's standard
+# combined log with no $host (every request folds into one "all" site).
+EG_LOG_PATH="/var/log/nginx/access.log"
+EG_LINE_REGEX=""
+
+# configure_nginx_logging optionally adds a dedicated nginx access log carrying $host so
+# Edge Guardian can break stats down per domain. It NEVER edits existing config — it only
+# drops a self-contained snippet, validates with `nginx -t`, reloads, and rolls back on
+# failure. Interactive: it reads /dev/tty (works even under `curl | bash`, where stdin is
+# the script). Skipped silently when there is no terminal (cron/CI) or no nginx.
+configure_nginx_logging() {
+  command -v nginx >/dev/null 2>&1 || return 0
+  if [ ! -r /dev/tty ]; then
+    log "Non-interactive install — skipping nginx \$host log setup (see config comments)."
+    return 0
+  fi
+
+  local snip="/etc/nginx/conf.d/edge-guardian-log.conf"
+  if nginx -T 2>/dev/null | grep -qiE 'log_format[^;]*\$host'; then
+    log "nginx already logs \$host — per-site stats can use your current access log."
+  fi
+
+  printf '\n  Edge Guardian can add a dedicated nginx access log carrying $host for\n' > /dev/tty
+  printf '  per-site health/error stats. It is a separate snippet — your existing\n' > /dev/tty
+  printf '  nginx config is left untouched, and reverted automatically if invalid.\n' > /dev/tty
+  printf '  Add it now? [t]ext / [j]son / [s]kip (default s): ' > /dev/tty
+  local ans=""
+  read -r ans < /dev/tty || ans="s"
+
+  local fmt
+  case "$ans" in
+    t|T|text|TEXT) fmt="text" ;;
+    j|J|json|JSON) fmt="json" ;;
+    *) log "Skipped nginx log setup."; return 0 ;;
+  esac
+
+  mkdir -p /var/log/edge-guardian
+  if [ "$fmt" = "json" ]; then
+    cat > "$snip" <<'NG'
+# Added by the edge-guardian installer. A dedicated access log carrying $host for
+# per-site stats. Safe to remove; does not affect your other access logs.
+log_format eg_guardian escape=json '{"host":"$host","remote_addr":"$remote_addr","uri":"$request_uri","status":$status,"request_time":$request_time,"bytes":$body_bytes_sent,"ua":"$http_user_agent","upstream_status":"$upstream_status"}';
+access_log /var/log/edge-guardian/access.log eg_guardian;
+NG
+  else
+    cat > "$snip" <<'NG'
+# Added by the edge-guardian installer. A dedicated access log carrying $host for
+# per-site stats. Safe to remove; does not affect your other access logs.
+log_format eg_guardian '$host $remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent"';
+access_log /var/log/edge-guardian/access.log eg_guardian;
+NG
+  fi
+
+  if ! nginx -t >/dev/null 2>&1; then
+    rm -f "$snip"
+    log "nginx -t failed — reverted the snippet, nothing changed. Configure logging manually."
+    return 0
+  fi
+  nginx -s reload 2>/dev/null || systemctl reload nginx 2>/dev/null || true
+
+  EG_LOG_PATH="/var/log/edge-guardian/access.log"
+  if [ "$fmt" = "text" ]; then
+    EG_LINE_REGEX='^(?P<host>\S+) (?P<ip>\S+) \S+ \S+ \[[^\]]+\] "(?:\S+) (?P<uri>\S+)[^"]*" (?P<status>\d+) (?P<bytes>\S+) "[^"]*" "(?P<ua>[^"]*)"'
+  fi
+  log "Added nginx access log ($fmt): /var/log/edge-guardian/access.log"
+  log "NOTE: vhosts that declare their own 'access_log' won't inherit this. Add to each:"
+  log "      access_log /var/log/edge-guardian/access.log eg_guardian;"
+}
+
 # 1) Binary. Release assets are GoReleaser tarballs named
 #    edge-guardian_<version>_linux_<arch>.tar.gz with the binary at the archive root.
 if [ -n "${EDGEGUARD_BINARY:-}" ]; then
@@ -83,13 +152,23 @@ fi
 # 2) Directories.
 mkdir -p "$ETC_DIR" "$LIB_DIR"
 
-# 3) Starter config (only if absent — never clobber an edited config).
+# 3) nginx logging (interactive, optional) then the starter config.
+configure_nginx_logging
+
 if [ ! -f "$CONFIG" ]; then
   log "Writing starter config: $CONFIG"
-  cat > "$CONFIG" <<'TOML'
-# edge-guardian config — edit, then: systemctl restart edge-guardian
-[log]
-paths = ["/var/log/nginx/access.log"]
+  {
+    printf '# edge-guardian config — edit, then: systemctl restart edge-guardian\n'
+    printf '[log]\n'
+    printf 'paths = ["%s"]\n' "$EG_LOG_PATH"
+    if [ -n "$EG_LINE_REGEX" ]; then
+      printf "line_regex = '%s'\n" "$EG_LINE_REGEX"
+    fi
+    cat <<'TOML'
+# Per-site health/errors need the request's $host. nginx's default "combined" format
+# does NOT log it, so every request folds into one "all" site. Re-run the installer to
+# add a $host access log automatically, or add one manually and set a matching line_regex.
+# (Edge Guardian still lists every domain from `nginx -T` even without this.)
 
 [detection]
 bad_uri_patterns = [
@@ -121,9 +200,17 @@ enabled = false
 [state]
 path = "/var/lib/edge-guardian/state.json"
 TOML
+  } > "$CONFIG"
   chmod 600 "$CONFIG"
 else
   log "Config exists, keeping it: $CONFIG"
+  if [ "$EG_LOG_PATH" != "/var/log/nginx/access.log" ]; then
+    log "To use the new \$host log, set in $CONFIG: [log] paths = [\"$EG_LOG_PATH\"]"
+    if [ -n "$EG_LINE_REGEX" ]; then
+      log "and line_regex = '$EG_LINE_REGEX'"
+    fi
+    log "then: systemctl restart edge-guardian"
+  fi
 fi
 
 # 4) Initialize nftables (table + sets + drop rules). Idempotent.

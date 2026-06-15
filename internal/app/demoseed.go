@@ -102,4 +102,44 @@ func maybeSeedDemo(store *web.Store, now time.Time) {
 			ASN:      o.asn,
 		})
 	}
+
+	seedErrorsDemo(store, now)
+}
+
+// seedErrorsDemo fabricates a spread of 4xx/5xx requests across several hosts so the
+// /errors page (filter + pagination) has realistic data in the demo. DEMO/DEV ONLY.
+func seedErrorsDemo(store *web.Store, now time.Time) {
+	hosts := []string{"baophapluat.vn", "daidoanket.vn", "tienphong.vn"}
+	paths := []struct {
+		path   string
+		status int
+	}{
+		{"/wp-login.php", 403},
+		{"/.env", 404},
+		{"/xmlrpc.php?rsd", 403},
+		{"/api/v1/orders", 502},
+		{"/cgi-bin/login.cgi", 404},
+		{"/admin/config.php", 500},
+		{"/.git/config", 404},
+		{"/wp-admin/admin-ajax.php", 503},
+		{"/index.php?page=../../etc/passwd", 400},
+		{"/search?q=%27", 500},
+	}
+	ips := []string{"45.13.22.7", "92.118.39.10", "185.220.101.5", "103.74.19.88", "159.65.220.4", "80.94.95.112"}
+
+	// ~140 entries over the last 2 hours → enough to exercise pagination (>50/page).
+	const total = 140
+	window := 2 * time.Hour
+	for i := range total {
+		frac := float64(i) / float64(total)
+		at := now.Add(-time.Duration((1-frac)*float64(window)) - time.Minute)
+		p := paths[(i*3)%len(paths)]
+		store.PushError(web.ErrorReq{
+			At:     at,
+			Host:   hosts[i%len(hosts)],
+			IP:     ips[(i*5)%len(ips)],
+			Path:   p.path,
+			Status: p.status,
+		})
+	}
 }

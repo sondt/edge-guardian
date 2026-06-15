@@ -24,9 +24,15 @@ const FeedDefault = 12
 type Store struct {
 	mu        sync.RWMutex
 	events    []Event
+	errs      []ErrorReq // bounded ring of recent 4xx/5xx requests (capped by count)
 	retention time.Duration
 	now       func() time.Time // injectable clock for deterministic tests
 }
+
+// ErrorBufferCap is the maximum number of recent error requests retained for the
+// /errors page. Capped by COUNT (not time) because error volume on a busy site can be
+// high; the oldest entries are dropped once the cap is reached.
+const ErrorBufferCap = 2000
 
 // NewStore creates an empty Store retaining events for the given window. A zero or
 // negative retention is clamped to 24h so the buffer always has a sane bound.

@@ -138,6 +138,33 @@ func TestLineParser_StatusBytes(t *testing.T) {
 	}
 }
 
+// nginxRegexHost is a custom log_format that prepends $host (text/combined, not JSON) so
+// per-site health works without switching to JSON logs.
+const nginxRegexHost = `^(?P<host>\S+) (?P<ip>\S+) \S+ \S+ \[[^\]]+\] "(?:\S+) (?P<uri>\S+)[^"]*" (?P<status>\d+)`
+
+func TestLineParser_Host(t *testing.T) {
+	p, err := NewLineParser(nginxRegexHost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ev, ok := p.Parse(`shop.example.com 1.2.3.4 - - [10/Oct/2024:13:55:36 +0000] "GET /a HTTP/1.1" 502`)
+	if !ok {
+		t.Fatal("did not parse")
+	}
+	if ev.Host != "shop.example.com" {
+		t.Fatalf("host=%q want shop.example.com", ev.Host)
+	}
+	if ev.IP != "1.2.3.4" || ev.Status != 502 {
+		t.Fatalf("ip/status wrong: %q %d", ev.IP, ev.Status)
+	}
+	// A regex without a host group leaves Host empty (back-compat with combined logs).
+	plain, _ := NewLineParser(nginxRegexFull)
+	ev2, _ := plain.Parse(`1.2.3.4 - - [10/Oct/2024:13:55:36 +0000] "GET /a HTTP/1.1" 200 12 "-" "curl"`)
+	if ev2.Host != "" {
+		t.Fatalf("host should be empty without a host group, got %q", ev2.Host)
+	}
+}
+
 func TestLineParser_JSON(t *testing.T) {
 	p, _ := NewLineParser(nginxRegex) // regex is just the combined fallback
 	line := `{"time":"2024-10-10T13:55:36+00:00","host":"example.com","remote_addr":"203.0.113.9",` +

@@ -314,6 +314,43 @@ func TestBansPageShowsLocationAndFullPath(t *testing.T) {
 	}
 }
 
+func TestErrorsPageRendersWithFilter(t *testing.T) {
+	s := newTestServer(t, &fakeDataSource{})
+	base := time.Now().Add(-time.Hour)
+	s.store.PushError(ErrorReq{At: base.Add(1 * time.Minute), Host: "shop.example.com", IP: "9.9.9.9", Path: "/wp-login.php", Status: 403})
+	s.store.PushError(ErrorReq{At: base.Add(2 * time.Minute), Host: "api.example.com", IP: "8.8.8.8", Path: "/v1/orders", Status: 502})
+	cookies := login(t, s)
+
+	// Unfiltered: both rows + the host options present.
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/errors", nil)
+	for _, c := range cookies {
+		req.AddCookie(c)
+	}
+	s.Handler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET /errors: want 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{"/wp-login.php", "/v1/orders", "shop.example.com", "api.example.com", "502", "403"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("errors page missing %q", want)
+		}
+	}
+
+	// Filter by 5xx: only the 502 row should remain.
+	rec2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodGet, "/errors?class=5xx", nil)
+	for _, c := range cookies {
+		req2.AddCookie(c)
+	}
+	s.Handler().ServeHTTP(rec2, req2)
+	body2 := rec2.Body.String()
+	if !strings.Contains(body2, "/v1/orders") || strings.Contains(body2, "/wp-login.php") {
+		t.Fatalf("5xx filter wrong:\n%s", body2)
+	}
+}
+
 func TestUnbanRejectedWithoutCSRF(t *testing.T) {
 	data := &fakeDataSource{bans: []Ban{{IP: "185.1.2.3", Detector: "http"}}}
 	s := newTestServer(t, data)
