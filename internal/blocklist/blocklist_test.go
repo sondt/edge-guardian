@@ -166,6 +166,44 @@ func TestCoalesce(t *testing.T) {
 	}
 }
 
+func TestIsBogon(t *testing.T) {
+	bogon := []string{
+		"127.0.0.0/8", "127.0.0.1/32", "10.0.0.0/8", "10.5.6.0/24",
+		"192.168.1.0/24", "172.16.0.0/12", "100.64.0.0/10", "169.254.0.0/16",
+		"0.0.0.0/8", "224.0.0.0/4", "240.0.0.0/4", "255.255.255.255/32",
+		"::1/128", "fe80::/10", "fc00::/7",
+	}
+	for _, s := range bogon {
+		if !isBogon(netip.MustParsePrefix(s)) {
+			t.Errorf("isBogon(%s) = false, want true", s)
+		}
+	}
+	routable := []string{"1.2.3.0/24", "9.9.9.9/32", "185.220.101.0/24", "45.13.0.0/16", "8.8.8.0/24", "2606:4700::/32"}
+	for _, s := range routable {
+		if isBogon(netip.MustParsePrefix(s)) {
+			t.Errorf("isBogon(%s) = true, want false", s)
+		}
+	}
+}
+
+func TestFetchAll_StripsBogons(t *testing.T) {
+	// A source full of non-routable ranges (as FireHOL level1 actually contains) must
+	// load NOTHING into the drop set — otherwise the host blackholes its own loopback.
+	body := "127.0.0.0/8\n10.0.0.0/8\n192.168.0.0/16\n169.254.0.0/16\n100.64.0.0/10\n1.2.3.0/24\n"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	set, errs := FetchAll(context.Background(), http.DefaultClient, []string{srv.URL}, nil)
+	if len(errs) != 0 {
+		t.Fatalf("unexpected errors: %v", errs)
+	}
+	if len(set.V4) != 1 || set.V4[0].String() != "1.2.3.0/24" {
+		t.Fatalf("bogons not stripped, v4=%v want [1.2.3.0/24]", set.V4)
+	}
+}
+
 func TestFetchAll_BadSourceSkipped(t *testing.T) {
 	good := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("1.2.3.0/24\n"))

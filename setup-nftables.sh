@@ -41,19 +41,24 @@ nft list chain inet "$TABLE" input >/dev/null 2>&1 || \
 # Flush rồi add lại để tránh rule trùng lặp khi chạy nhiều lần.
 nft flush chain inet "$TABLE" input
 
-# 1) IP đang bị ban (động) hoặc thuộc blocklist công khai (import) → drop trên MỌI
-#    port (đặt trước để không lọt qua các rule accept service bên dưới).
+# 0) AN TOÀN BẮT BUỘC — LUÔN accept loopback + kết nối đã thiết lập TRƯỚC mọi rule drop.
+#    Thiếu bước này, một dải bị chặn trùng loopback/LAN, hoặc traffic TRẢ VỀ của chính
+#    host (vd nginx → 127.0.0.1 upstream, hay kết nối ra ngoài rồi nhận phản hồi), sẽ bị
+#    blackhole → 504 toàn bộ site. Đây là thứ tự stateful firewall chuẩn. Đánh đổi: ban
+#    chỉ chặn kết nối MỚI từ IP xấu (kết nối đang mở của nó vẫn chạy tới khi đóng) —
+#    chấp nhận được, và là cách fail2ban/đa số firewall hoạt động.
+nft add rule inet "$TABLE" input iif lo accept
+nft add rule inet "$TABLE" input ct state established,related accept
+
+# 1) IP đang bị ban (động) hoặc thuộc blocklist công khai (import) → drop gói MỚI trên
+#    MỌI port (đặt trước các rule accept service bên dưới).
 nft add rule inet "$TABLE" input ip saddr @blocklist4 drop
 nft add rule inet "$TABLE" input ip6 saddr @blocklist6 drop
 nft add rule inet "$TABLE" input ip saddr @blockset4 drop
 nft add rule inet "$TABLE" input ip6 saddr @blockset6 drop
 
-# 2) Phát hiện honeypot / port scan (tùy chọn).
+# 2) Phát hiện honeypot / port scan (tùy chọn). loopback + established đã accept ở (0).
 if [[ -n "${EG_HONEYPOT_PORTS:-}" || "${EG_PORTSCAN:-}" == "1" ]]; then
-    # An toàn: chấp nhận loopback + kết nối đã thiết lập + service port THẬT trước,
-    # để honeypot/portscan KHÔNG bao giờ chặn nhầm traffic hợp lệ.
-    nft add rule inet "$TABLE" input iif lo accept
-    nft add rule inet "$TABLE" input ct state established,related accept
     if [[ -n "${EG_SERVICE_PORTS:-}" ]]; then
         nft add rule inet "$TABLE" input tcp dport "{ ${EG_SERVICE_PORTS} }" accept
     fi

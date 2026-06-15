@@ -84,6 +84,51 @@ type excluder interface {
 	Contains(netip.Addr) bool
 }
 
+// bogons are non-routable / special-use ranges that must NEVER enter the drop set.
+// Public aggregate lists (notably FireHOL level1) deliberately include these so a
+// stub-resolver can drop spoofed packets — but on a server they cover loopback, the
+// LAN and CGNAT, so dropping inbound traffic from them blackholes the host itself
+// (e.g. nginx → 127.0.0.1 upstream → response dropped → 504 on every site). We strip
+// them unconditionally, independent of the user allowlist.
+var bogons = mustPrefixes(
+	"0.0.0.0/8",                                     // "this network" / unspecified
+	"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", // RFC1918 private
+	"100.64.0.0/10",      // RFC6598 CGNAT
+	"127.0.0.0/8",        // loopback
+	"169.254.0.0/16",     // link-local
+	"192.0.0.0/24",       // IETF protocol assignments
+	"192.0.2.0/24",       // TEST-NET-1 (documentation)
+	"224.0.0.0/4",        // multicast
+	"240.0.0.0/4",        // reserved
+	"255.255.255.255/32", // limited broadcast
+	"::1/128",            // IPv6 loopback
+	"::/128",             // IPv6 unspecified
+	"fc00::/7",           // IPv6 unique-local
+	"fe80::/10",          // IPv6 link-local
+	"ff00::/8",           // IPv6 multicast
+)
+
+func mustPrefixes(ss ...string) []netip.Prefix {
+	out := make([]netip.Prefix, len(ss))
+	for i, s := range ss {
+		out[i] = netip.MustParsePrefix(s)
+	}
+	return out
+}
+
+// isBogon reports whether p falls inside a non-routable / special-use range. A prefix
+// is rejected if its network address sits within any bogon range; since CIDR blocks
+// nest-or-disjoint, that catches both exact bogon prefixes and any sub-range of one.
+func isBogon(p netip.Prefix) bool {
+	a := p.Addr()
+	for _, b := range bogons {
+		if b.Contains(a) {
+			return true
+		}
+	}
+	return false
+}
+
 // FetchAll downloads all sources, merges them, deduplicates, drops prefixes whose network
 // address is in the allowlist, then splits into v4/v6. A failing source is skipped (its
 // error is returned in the error list) so the other sources remain usable.
@@ -101,6 +146,9 @@ func FetchAll(ctx context.Context, client *http.Client, urls []string, allow exc
 		for _, p := range prefixes {
 			if _, dup := seen[p]; dup {
 				continue
+			}
+			if isBogon(p) {
+				continue // never blackhole loopback/LAN/CGNAT/reserved space
 			}
 			if allow != nil && allow.Contains(p.Addr()) {
 				continue // don't block an allowlisted range
