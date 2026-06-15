@@ -1,0 +1,102 @@
+# Edge Guardian — static landing page (multilingual: / , /fr/ , /de/ , /es/ , /zh/ , /vi/)
+#
+# Cài đặt:
+#   1. Copy nội dung landing/ đã build sang server, ví dụ:
+#        rsync -a --delete \
+#          --exclude 'index.src.html' --exclude 'i18n' --exclude 'build-i18n.go' \
+#          --exclude 'deploy' --exclude '*.md' \
+#          landing/  user@server:/var/www/edge-guardian-landing/
+#      (chỉ cần các file đã generate: index.html, fr/ de/ es/ zh/ vi/, favicon*, og.png,
+#       robots.txt, llms.txt)
+#   2. Đổi `server_name` và đường dẫn cert bên dưới.
+#   3. sudo cp nginx.conf.example /etc/nginx/conf.d/edge-guardian-landing.conf
+#   4. sudo nginx -t && sudo nginx -s reload
+#   5. TLS: dùng certbot →  sudo certbot --nginx -d guard.example.com
+
+# ── HTTP → HTTPS ────────────────────────────────────────────────────────────
+server {
+    listen 80;
+    listen [::]:80;
+    server_name guard.example.com;            # ← ĐỔI domain của bạn
+
+    # Chỗ cho ACME challenge (Let's Encrypt) trước khi redirect.
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+
+    location / { return 301 https://$host$request_uri; }
+}
+
+# ── HTTPS ───────────────────────────────────────────────────────────────────
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;                                  # nginx < 1.25.1: bỏ dòng này, dùng `listen 443 ssl http2;`
+    server_name guard.example.com;             # ← ĐỔI domain của bạn
+
+    root  /var/www/edge-guardian-landing;      # ← thư mục chứa index.html, fr/, de/, ...
+    index index.html;
+
+    # TLS — ĐỔI sang cert của bạn (certbot tạo sẵn 2 đường dẫn này).
+    ssl_certificate     /etc/letsencrypt/live/guard.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/guard.example.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_session_cache   shared:SSL:10m;
+
+    # Logs. Bỏ comment dòng eg_guardian NẾU host này chạy edge-guardian và bạn muốn
+    # landing xuất hiện trong dashboard /sites + /errors (cần log_format eg_guardian từ
+    # /etc/nginx/conf.d/00-edge-guardian-log.conf).
+    access_log /var/log/nginx/edge-guardian-landing.access.log;
+    # access_log /var/log/edge-guardian/access.log eg_guardian;
+    error_log  /var/log/nginx/edge-guardian-landing.error.log;
+
+    # ── Security headers (cấp server → kế thừa cho mọi location KHÔNG tự khai add_header).
+    #    Trang dùng inline <style>/<script> nên style/script-src cần 'unsafe-inline'.
+    add_header X-Content-Type-Options    "nosniff" always;
+    add_header X-Frame-Options           "SAMEORIGIN" always;
+    add_header Referrer-Policy           "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Content-Security-Policy    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; base-uri 'self'; frame-ancestors 'self'" always;
+
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css application/javascript application/json image/svg+xml application/xml;
+
+    # Chặn truy cập file nguồn nếu lỡ deploy kèm (phòng hờ).
+    location ~* \.(md|go)$        { deny all; }
+    location = /index.src.html    { deny all; }
+    location ^~ /i18n/            { deny all; }
+
+    # Tài sản tĩnh — cache dài. CHỈ dùng `expires` (không `add_header`) để location này
+    # vẫn KẾ THỪA toàn bộ security header ở cấp server — nginx bỏ kế thừa add_header ngay
+    # khi location có add_header riêng. `expires 30d` tự đặt Cache-Control: max-age=2592000.
+    location ~* \.(?:css|js|mjs|woff2?|ttf|png|jpe?g|gif|ico|svg|webp|avif)$ {
+        expires 30d;
+        access_log off;
+        try_files $uri =404;
+    }
+
+    location = /robots.txt { access_log off; log_not_found off; }
+    location = /llms.txt   { default_type text/plain; }
+
+    # HTML + các thư mục ngôn ngữ. `$uri/` kích hoạt `index index.html`, nên /fr/ → /fr/index.html.
+    location / {
+        try_files $uri $uri/ =404;
+        expires 10m;                           # HTML cache ngắn để cập nhật hiển thị nhanh
+    }
+}
+
+# ── (TÙY CHỌN) Tự chuyển hướng theo ngôn ngữ trình duyệt ở trang gốc ──────────
+# Mặc định KHÔNG bật (giữ / = English + bộ chọn ngôn ngữ + hreflang, tốt cho SEO).
+# Nếu muốn auto-redirect lần đầu vào "/", thêm ở http{} block:
+#
+#   map $http_accept_language $eg_lang {
+#       default        "";
+#       ~*^vi          /vi/;
+#       ~*^fr          /fr/;
+#       ~*^de          /de/;
+#       ~*^es          /es/;
+#       ~*^zh          /zh/;
+#   }
+#
+# và trong server 443, TRƯỚC location / :
+#   location = / { if ($eg_lang) { return 302 $eg_lang; } try_files /index.html =404; }
