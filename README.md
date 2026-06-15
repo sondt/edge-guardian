@@ -42,6 +42,12 @@ drop on a box, point at a log, and forget.
 | Port-scan detection (distinct-port counting) + honeypot ports | Implemented (Go) |
 | Public blocklist import (FireHOL, Spamhaus) → nftables interval set | Implemented (Go) |
 | Edge health monitoring (per-site 5xx / req-rate / p95 latency + degraded/down alerts), off by default | Implemented (Go) |
+| Per-site discovery via `nginx -T` + `$host` parsing (split stats by domain) | Implemented (Go) |
+| Error-request log viewer (`/errors`: 4xx/5xx with host, path, status, IP, UA + GeoIP; filter + paginate) | Implemented (Go) |
+| Absolute path in ban reason (host-prefixed) + GeoIP location in notifications | Implemented (Go) |
+| Self-heal nftables input chain on startup (always accept loopback + established) | Implemented (Go) |
+| Optional self-update (systemd timer) + interactive `$host` log setup in the installer | Implemented |
+| Multilingual landing page (EN · FR · DE · ES · 中文 · VI) | Implemented |
 | Escalating ban + one-line install + `.deb`/`.rpm` + Docker image | Implemented |
 
 ## Quick start
