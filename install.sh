@@ -204,12 +204,22 @@ TOML
   chmod 600 "$CONFIG"
 else
   log "Config exists, keeping it: $CONFIG"
+  # If the user just opted into a $host access log, point the EXISTING config at it —
+  # otherwise Edge Guardian keeps reading the old host-less log and every request folds
+  # into "all". A timestamped backup is written first. paths uses '#' as the sed
+  # delimiter (the path has slashes); line_regex is inserted verbatim via sed's `r` so
+  # its backslashes are never mangled.
   if [ "$EG_LOG_PATH" != "/var/log/nginx/access.log" ]; then
-    log "To use the new \$host log, set in $CONFIG: [log] paths = [\"$EG_LOG_PATH\"]"
+    cp -p "$CONFIG" "$CONFIG.bak" 2>/dev/null || true
+    sed -i 's#^[[:space:]]*paths[[:space:]]*=.*#paths = ["'"$EG_LOG_PATH"'"]#' "$CONFIG"
+    sed -i '/^[[:space:]]*line_regex[[:space:]]*=/d' "$CONFIG"
     if [ -n "$EG_LINE_REGEX" ]; then
-      log "and line_regex = '$EG_LINE_REGEX'"
+      _lr="$(mktemp)"
+      printf "line_regex = '%s'\n" "$EG_LINE_REGEX" > "$_lr"
+      sed -i '/^[[:space:]]*paths[[:space:]]*=/r '"$_lr" "$CONFIG"
+      rm -f "$_lr"
     fi
-    log "then: systemctl restart edge-guardian"
+    log "Updated $CONFIG to read the new \$host log (backup: $CONFIG.bak)."
   fi
 fi
 
@@ -259,9 +269,12 @@ UNITFILE
 
 # 6) Enable + start (unless skipped or systemd unavailable).
 if [ "${EDGEGUARD_NO_START:-}" != "1" ] && command -v systemctl >/dev/null 2>&1 && [ -d /run/systemd/system ]; then
-  log "Enabling + starting service…"
+  log "Enabling + (re)starting service…"
   systemctl daemon-reload
-  systemctl enable --now edge-guardian
+  systemctl enable edge-guardian >/dev/null 2>&1 || true
+  # restart (not just enable --now) so a re-run picks up the new binary AND any config
+  # change made above; restart also starts the service if it was stopped.
+  systemctl restart edge-guardian
   systemctl --no-pager status edge-guardian | head -5 || true
 else
   log "Skipping service start (no systemd or EDGEGUARD_NO_START=1)."
