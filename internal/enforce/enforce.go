@@ -7,6 +7,7 @@
 package enforce
 
 import (
+	"log/slog"
 	"net/netip"
 	"time"
 )
@@ -29,6 +30,12 @@ type Enforcer interface {
 	// ReplaceBlockset replaces the entire contents of the imported blocklist interval
 	// set with the given prefixes (flush + reload). Used for periodic public blocklist imports.
 	ReplaceBlockset(v4, v6 []netip.Prefix) error
+	// EnsureBaselineAccept guarantees the input chain accepts loopback and established/
+	// related connections BEFORE any drop rule, repairing the chain if those rules are
+	// absent. Without them, a blocked range overlapping loopback/LAN — or the host's own
+	// return traffic — is blackholed (the 504 outage). Idempotent and best-effort: it only
+	// inserts missing rules and never fails daemon start. The stub (non-Linux) is a no-op.
+	EnsureBaselineAccept(log *slog.Logger)
 	// Close releases the netlink connection.
 	Close() error
 }

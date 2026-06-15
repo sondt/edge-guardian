@@ -4,6 +4,7 @@ package enforce
 
 import (
 	"fmt"
+	"log/slog"
 	"net/netip"
 	"runtime"
 	"time"
@@ -26,4 +27,5 @@ func (stubEnforcer) Unban(netip.Addr) error              { return unsupported("U
 func (stubEnforcer) ReplaceBlockset([]netip.Prefix, []netip.Prefix) error {
 	return unsupported("ReplaceBlockset")
 }
-func (stubEnforcer) Close() error { return nil }
+func (stubEnforcer) EnsureBaselineAccept(*slog.Logger) {}
+func (stubEnforcer) Close() error                      { return nil }

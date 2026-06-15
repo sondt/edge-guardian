@@ -47,7 +47,8 @@ func (f *fakeEnforcer) ReplaceBlockset(v4, v6 []netip.Prefix) error {
 	f.blockset = len(v4) + len(v6)
 	return nil
 }
-func (f *fakeEnforcer) Close() error { return nil }
+func (f *fakeEnforcer) EnsureBaselineAccept(*slog.Logger) {}
+func (f *fakeEnforcer) Close() error                      { return nil }
 func (f *fakeEnforcer) banCount() int {
 	f.mu.Lock()
 	defer f.mu.Unlock()

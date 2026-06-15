@@ -80,6 +80,11 @@ func Build(cfg config.Config, logger *slog.Logger) (*Components, error) {
 		geo.Close()
 		return nil, fmt.Errorf("init enforcer: %w", err)
 	}
+	// Self-heal: guarantee the input chain accepts loopback + established traffic before
+	// any drop, regardless of how the table was set up (an old chain, a hand-edited one).
+	// This is the safety net that makes a 504 blackhole impossible even if the operator
+	// never re-runs setup-nftables.sh. Best-effort; never blocks start.
+	enf.EnsureBaselineAccept(logger)
 
 	var channels []notify.Notifier
 	if cfg.Telegram.Enabled {
