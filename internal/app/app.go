@@ -230,6 +230,10 @@ func (a *App) Restore(ctx context.Context) {
 			a.d.Logger.Warn("restore: skip invalid ip", "ip", e.IP, "err", err)
 			continue
 		}
+		if a.d.Allow.Contains(addr) {
+			a.d.Logger.Info("restore: skip allowlisted ip", "ip", e.IP)
+			continue
+		}
 		remaining := e.ExpiresAt.Sub(now)
 		if remaining <= 0 {
 			continue
