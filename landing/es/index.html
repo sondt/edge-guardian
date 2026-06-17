@@ -336,6 +336,10 @@ section{position:relative}
 .inst h3{font-size:17px;display:flex;align-items:center;gap:9px}
 .inst h3 .d{width:8px;height:8px;border-radius:50%;background:var(--ink)}
 .inst p{color:var(--muted);font-size:14px;margin:.6em 0 14px}
+.inst-note{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;margin-top:18px}
+.inst-note h3{font-size:17px;display:flex;align-items:center;gap:9px}
+.inst-note h3 .d{width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.inst-note p{color:var(--muted);font-size:14px;margin:.6em 0 14px}
 .code{background:var(--ink);color:var(--paper);border-radius:9px;padding:13px;font-family:var(--mono);font-size:12.5px;
   line-height:1.7;overflow-x:auto;margin-top:auto}
 .code .c{color:#6f7681}
@@ -591,9 +595,9 @@ curl -fsSL https://raw.githubusercontent.com/<wbr>sondt/edge-guardian/main/insta
       <h3><span class="d"></span> .deb / .rpm</h3>
       <p>Paquetes nativos para amd64 &amp; arm64. La config es un conffile — a salvo entre actualizaciones.</p>
       <pre class="code"><span class="c"># Debian / Ubuntu</span>
-sudo apt install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.deb
+sudo apt install ./edge-guardian_<span class="a">0.4.9</span>_linux_amd64.deb
 <span class="c"># RHEL / Rocky / Fedora</span>
-sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</pre>
+sudo dnf install ./edge-guardian_<span class="a">0.4.9</span>_linux_amd64.rpm</pre>
     </div>
     <div class="inst">
       <h3><span class="d"></span> Docker</h3>
@@ -603,6 +607,16 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
   -v /etc/edge-guardian:/etc/edge-guardian \
   ghcr.io/sondt/edge-guardian</pre>
     </div>
+  </div>
+  <div class="inst-note">
+    <h3><span class="d"></span> Desinstalación</h3>
+    <p>Una línea lo revierte todo: detiene el servicio, elimina la tabla nftables (levantando todos los baneos activos a la vez) y quita el binario. La configuración y el estado se conservan salvo que añadas <code>--purge</code>.</p>
+    <pre class="code"><span class="c"># clean removal &mdash; every active ban is lifted immediately</span>
+curl -fsSL https://raw.githubusercontent.com/<wbr>sondt/edge-guardian/main/uninstall.sh \
+  | sudo bash
+<span class="c"># add --purge to also drop config + state</span>
+curl -fsSL https://raw.githubusercontent.com/<wbr>sondt/edge-guardian/main/uninstall.sh \
+  | sudo bash -s -- --purge</pre>
   </div>
 </div></section>
 
@@ -658,6 +672,10 @@ sudo dnf install ./edge-guardian_<span class="a">0.4.4</span>_linux_amd64.rpm</p
     <details class="qa">
       <summary>¿Cómo instalo Edge Guardian?</summary>
       <p>Ejecuta el instalador de una línea (<code>curl -fsSL .../install.sh | sudo bash</code>), instala el paquete <code>.deb</code> o <code>.rpm</code>, o ejecuta la imagen de Docker. Edge Guardian arranca en modo dry-run: observa y avisa antes de bloquear.</p>
+    </details>
+    <details class="qa">
+      <summary>¿Cómo desinstalo Edge Guardian?</summary>
+      <p>Ejecuta el desinstalador de una línea (<code>curl -fsSL .../uninstall.sh | sudo bash</code>). Detiene el servicio, elimina la tabla nftables — lo que levanta todos los baneos activos a la vez, así que cualquier dirección baneada por error (un edge de CDN, un proxy) se libera de inmediato — y quita el binario. La configuración y el estado se conservan salvo que añadas <code>--purge</code>. Si instalaste el paquete, <code>apt purge edge-guardian</code> o <code>dnf remove edge-guardian</code> también funciona.</p>
     </details>
   </div>
 </div></section>
